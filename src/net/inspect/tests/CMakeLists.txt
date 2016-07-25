@@ -1,0 +1,2 @@
+add_executable(Inspector_test Inspector_test.cc)
+target_link_libraries(Inspector_test inspect http)
