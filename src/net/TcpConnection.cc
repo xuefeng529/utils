@@ -26,6 +26,7 @@ void TcpConnection::handleRead(struct bufferevent *bev, void *ctx)
 {
 	TcpConnection* conn = static_cast<TcpConnection*>(ctx);
 	LOG_DEBUG << "TcpConnection::handleRead[" << conn->name_ << "]";
+	assert(conn->inputBuffer_->length() != 0);
 	conn->messageCallback_(conn->shared_from_this(), conn->inputBuffer_.get());
 }
 

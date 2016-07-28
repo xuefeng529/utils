@@ -105,6 +105,7 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
+		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
 		/*std::string msg;
 		buffer->retrieveAllAsString(&msg);
 		if (msg == "quit")
@@ -115,9 +116,9 @@ private:
 		{
 		conn->send(msg);
 		}*/
-		net::BufferPtr sendBuffer(new net::Buffer());
+		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
-		conn->send(sendBuffer);
+		conn->send(sendBuffer);*/
 		/*int cnt = boost::any_cast<int>(conn->getContext());
 		cnt++;
 		conn->setContext(cnt);
@@ -175,7 +176,7 @@ int main(int argc, char* argv[])
 	memset(g_text, 's', sizeof(g_text));
 	net::EventLoop loop;
 	//g_loop = &loop;
-	net::InetAddress listenAddr(atoi(argv[1]));
+	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
 	EchoServer server(&loop, listenAddr, 30);
 	server.start();
 	loop.loop();

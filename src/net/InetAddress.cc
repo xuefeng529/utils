@@ -30,19 +30,20 @@ InetAddress::InetAddress(uint16_t port)
 {
 	bzero(&addr_, sizeof(addr_));
 	addr_.sin_family = AF_INET;
-	addr_.sin_addr.s_addr = ::htonl(INADDR_ANY);
-	addr_.sin_port = ::htons(port);
+	addr_.sin_addr.s_addr = sockets::hostToNetwork32(INADDR_ANY);
+	addr_.sin_port = sockets::hostToNetwork16(port);
 }
 
 InetAddress::InetAddress(char* ip, uint16_t port)
 {
 	bzero(&addr_, sizeof(addr_));
 	addr_.sin_family = AF_INET;
-	addr_.sin_port = ::htons(port);
+	addr_.sin_port = sockets::hostToNetwork16(port);
 	if (::inet_pton(AF_INET, ip, &addr_.sin_addr.s_addr) <= 0)
 	{
 		char errorBuf[512];
-		LOG_SYSERR << "inet_pton error: " << strerror_r(errno, errorBuf, sizeof(errorBuf));
+		strerror_r(errno, errorBuf, sizeof(errorBuf));
+		LOG_SYSERR << "inet_pton error: " << errorBuf;
 	}
 }
 
@@ -51,7 +52,7 @@ std::string InetAddress::toIpPort() const
   char buf[64] = "";
   ::inet_ntop(AF_INET, &addr_.sin_addr.s_addr, buf, static_cast<socklen_t>(sizeof(buf)));
   size_t end = ::strlen(buf);
-  uint16_t port = ::ntohs(addr_.sin_port);
+  uint16_t port = sockets::networkToHost16(addr_.sin_port);
   snprintf(buf + end, sizeof(buf) - end, ":%u", port);
   return buf;
 }
@@ -84,7 +85,8 @@ bool InetAddress::resolve(const char* hostname, InetAddress* out)
     if (ret)
     {
 		char errorBuf[512];
-		LOG_SYSERR << "InetAddress::resolve error: " << strerror_r(errno, errorBuf, sizeof(errorBuf));
+		strerror_r(errno, errorBuf, sizeof(errorBuf));
+		LOG_SYSERR << "InetAddress::resolve error: " << errorBuf;
     }
     return false;
   }

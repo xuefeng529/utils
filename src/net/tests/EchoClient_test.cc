@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
 		memset(g_text, 'c', sizeof(g_text));
 
 		EventLoop loop;
-		InetAddress serverAddr(argv[1], atoi(argv[2]));
+		InetAddress serverAddr(argv[1], static_cast<uint16_t>(atoi(argv[2])));
 
 		int n = 1;
 		if (argc > 3)

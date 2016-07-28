@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 
 	net::EventLoop loop;
-	net::InetAddress listenAddr(atoi(argv[1]));
+	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
 	HttpServer server(&loop, listenAddr);
 	server.start();
 

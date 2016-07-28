@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 		numThreads = atoi(argv[2]);
 	}
 	net::EventLoop loop;
-	net::HttpServer server(&loop, net::InetAddress(atoi(argv[1])), "dummy");
+	net::HttpServer server(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "dummy");
 	server.setHttpCallback(onRequest);
 	server.setThreadNum(numThreads);
 	server.start();

@@ -244,7 +244,7 @@ void ZooApi::process_kfk_strings(struct String_vector *strings,map<string,int>& 
                 }
             }
 
-            int port;
+            int port = 0;
             if(leader != -1)
             {
                 newpath = m_kfk_path2;

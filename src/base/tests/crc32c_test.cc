@@ -38,6 +38,7 @@ void test1()
 		0x02, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,
 	};
+	(void)data;
 	assert(0xd9963a56 == base::crc32c::value(reinterpret_cast<char*>(data), sizeof(data)));
 }
 
@@ -59,6 +60,7 @@ void test4()
 	assert(crc != base::crc32c::mask(base::crc32c::mask(crc)));
 	assert(crc == base::crc32c::unmask(base::crc32c::mask(crc)));
 	assert(crc == base::crc32c::unmask(base::crc32c::unmask(base::crc32c::mask(base::crc32c::mask(crc)))));
+	(void)crc;
 }
 
 int main(int argc, char* argv[])
