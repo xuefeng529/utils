@@ -29,6 +29,7 @@ class KafkaApi
         bool GetKafkaMetaDataByZKP();
         void StartKafkaApi();
         void FuncDelivered(int partition);
+        void FuncDeliveredBatch(int partition);
         void Join();
 
     private :

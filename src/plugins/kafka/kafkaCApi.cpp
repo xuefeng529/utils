@@ -53,7 +53,7 @@ void KafkaApi::StartKafkaApi()
     for(it = map_kfk_info.begin();it!=map_kfk_info.end();it++)
     {
         boost::function<void()> f;
-        f = boost::bind(&KafkaApi::FuncDelivered,this,it->second);    
+        f = boost::bind(&KafkaApi::FuncDeliveredBatch,this,it->second);    
         Thread* m_thread = new  Thread(f, "ThreadConsumer");
         m_thread->start();
         m_list_thread.push_back(m_thread);
@@ -74,7 +74,34 @@ void KafkaApi::FuncDelivered(int partition)
         if(ret == -1) 
             LOG_ERROR<<"Error:"<<rd_kafka_err2str(rd_kafka_last_error());
     }   
+
     rd_kafka_consume_stop(m_rkt, partition);
+    return ;
+}
+
+void KafkaApi::FuncDeliveredBatch(int partition)
+{
+    if (rd_kafka_consume_start(m_rkt, partition, m_offset) == -1) 
+    {   
+        LOG_ERROR<<"Failed to start consuming:"<<rd_kafka_err2str(rd_kafka_last_error());
+    }  
+    rd_kafka_message_t **rkmessages = new rd_kafka_message_t *[1000];
+    while(m_runflag)
+    {   
+        int ret = rd_kafka_consume_batch(m_rkt, partition,1000,rkmessages,1000);
+        if(ret == -1) 
+            LOG_ERROR<<"Error:"<<rd_kafka_err2str(rd_kafka_last_error());
+        else
+        {
+            for (int i = 0 ; i < ret ; i++) 
+            {
+                msg_consume(rkmessages[i],this);
+                rd_kafka_message_destroy(rkmessages[i]);
+            } 
+        }
+    }   
+    rd_kafka_consume_stop(m_rkt, partition);
+    delete rkmessages;
     return ;
 }
 

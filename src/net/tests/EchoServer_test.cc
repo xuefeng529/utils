@@ -105,7 +105,7 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
 		/*std::string msg;
 		buffer->retrieveAllAsString(&msg);
 		if (msg == "quit")
@@ -116,9 +116,9 @@ private:
 		{
 		conn->send(msg);
 		}*/
-		/*net::BufferPtr sendBuffer(new net::Buffer());
+		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
-		conn->send(sendBuffer);*/
+		conn->send(sendBuffer);
 		/*int cnt = boost::any_cast<int>(conn->getContext());
 		cnt++;
 		conn->setContext(cnt);
