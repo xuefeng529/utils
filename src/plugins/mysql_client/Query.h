@@ -20,6 +20,19 @@ typedef boost::shared_ptr<ConnectionPool> ConnectionPoolPtr;
 
 const size_t kMaxConnections = 16;
 
+/// 测试数据库是否连通
+/// @host: 需要连接的数据库IP地址
+/// @port: 需要连接的数据库服务端口号
+/// @db: 需要连接的数据库名
+/// @user: 连接数据库用的用户名
+/// @password: 连接数据库用的密码
+/// @return: 成功true,失败false
+bool ping(const std::string& host,
+		  uint16_t port,
+		  const std::string& db,
+		  const std::string& user,
+		  const std::string& password);
+
 /// 初始化数据库
 /// @maxSize: 数据库最大连接数
 /// @host: 需要连接的数据库IP地址

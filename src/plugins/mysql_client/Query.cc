@@ -11,6 +11,26 @@ namespace plugin
 namespace mysql
 {
 
+bool ping(const std::string& host,
+		  uint16_t port,
+	      const std::string& db,
+	      const std::string& user,
+	      const std::string& password)
+{
+	MYSQL mysql;
+	mysql_init(&mysql);
+	if (mysql_real_connect(&mysql,
+		host.c_str(), user.c_str(), password.c_str(), db.c_str(), port, NULL, 0) == NULL)
+	{
+		LOG_ERROR << "mysql_real_connect error " << mysql_errno(&mysql) << ": "
+			<< mysql_error(&mysql);
+		return false;
+	}
+
+	mysql_close(&mysql);
+	return true;
+}
+
 bool initDefaultConnectionPool(const std::string& host,
 							   uint16_t port,
 							   const std::string& db,

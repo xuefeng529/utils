@@ -11,6 +11,17 @@
 
 using namespace base;
 
+bool FileUtil::isDirectory(const char* path)
+{
+	struct stat stats;
+	if (lstat(path, &stats) == 0 && S_ISDIR(stats.st_mode))
+	{
+		return true;
+	}
+		
+	return false;
+}
+
 FileUtil::AppendFile::AppendFile(const char* filename)
   : fp_(::fopen(filename, "ae")),  // 'e' for O_CLOEXEC
     writtenBytes_(0)
