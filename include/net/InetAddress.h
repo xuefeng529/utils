@@ -1,6 +1,8 @@
 #ifndef NET_INETADDRESS_H
 #define NET_INETADDRESS_H
 
+#include "Endian.h"
+
 #include <string>
 
 #include <netinet/in.h>
@@ -20,7 +22,7 @@ public:
 	std::string toIp() const;
 	std::string toIpPort() const;
 	uint16_t toPort() const
-	{ return ::ntohs(portNetEndian()); }
+	{ return sockets::networkToHost16(portNetEndian()); }
 
 	const struct sockaddr* getSockAddr() const
 	{ return reinterpret_cast<const struct sockaddr*>(&addr_); }

@@ -12,6 +12,9 @@ namespace base
 namespace FileUtil
 {
 
+// �Ƿ�ΪĿ¼
+bool isDirectory(const char* path);
+
 // read small file < 64KB
 class ReadSmallFile : boost::noncopyable
 {
