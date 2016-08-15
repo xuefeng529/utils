@@ -81,8 +81,8 @@ private:
 		}
 		else
 		{
-			int cnt = 0;
-			conn->setContext(cnt);
+			//int cnt = 0;
+			//conn->setContext(cnt);
 			//conn->send("my very good time");
 		}
 		//if (conn->connected())
@@ -106,20 +106,21 @@ private:
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
 		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
-		std::string msg;
-		buffer->retrieveAllAsString(&msg);
-		if (msg == "quit\r\n")
-		{
-			//conn->close();
-			loop_->quit();
-		}
-		else
-		{
-			conn->send(msg);
-		}
-		/*net::BufferPtr sendBuffer(new net::Buffer());
+		//buffer->retrieveAll();
+		//std::string msg;
+		//buffer->retrieveAllAsString(&msg);
+		//if (msg == "quit\r\n")
+		//{
+		//	//conn->close();
+		//	loop_->quit();
+		//}
+		//else
+		//{
+		//	conn->send(msg);
+		//}
+		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
-		conn->send(sendBuffer);*/
+		conn->send(sendBuffer);
 		/*int cnt = boost::any_cast<int>(conn->getContext());
 		cnt++;
 		conn->setContext(cnt);
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
 	net::EventLoop loop;
 	//g_loop = &loop;
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-	EchoServer server(&loop, listenAddr, 0);
+	EchoServer server(&loop, listenAddr, 60);
 	server.start();
 	loop.loop();
 	//log.stop();

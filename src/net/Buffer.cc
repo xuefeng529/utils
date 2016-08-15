@@ -77,7 +77,7 @@ void Buffer::appendInt8(int8_t x)
 
 void Buffer::removeBuffer(Buffer* buffer)
 {
-	evbuffer_add_buffer(buffer_, buffer->buffer_);
+	evbuffer_remove_buffer(buffer->buffer_, buffer_, buffer->length());
 }
 
 void Buffer::appendBuffer(const Buffer& buffer)
