@@ -17,6 +17,7 @@ set(CXX_FLAGS
  # -m32
  -Werror
  #-Wconversion
+ -Wno-deprecated
  -Wno-unused-parameter
  -Wold-style-cast
  -Woverloaded-virtual

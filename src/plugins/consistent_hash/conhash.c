@@ -4,6 +4,8 @@
 #include "plugins/consistent_hash/conhash.h"
 #include "plugins/consistent_hash/conhash_inter.h"
 
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
 struct conhash_s* conhash_init(conhash_cb_hashfunc pfhash)
 {
     /* alloc memory and set to zero */
@@ -101,7 +103,7 @@ const struct node_s* conhash_lookup(const struct conhash_s *conhash, const char 
     /* calc hash value */
     hash = conhash->cb_hashfunc(object);
     
-    rbnode = util_rbtree_lookup(&(conhash->vnode_tree), hash);
+    rbnode = util_rbtree_lookup((util_rbtree_t*)&(conhash->vnode_tree), hash);
     if(rbnode != NULL)
     {
         struct virtual_node_s *vnode = rbnode->data;

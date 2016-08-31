@@ -4,6 +4,7 @@
 #include "plugins/consistent_hash/conhash.h"
 #include "plugins/consistent_hash/conhash_inter.h"
 
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 
 void conhash_md5_digest(const u_char *instr, u_char digest[16])
 {
@@ -32,7 +33,7 @@ void conhash_get_vnodes(const struct conhash_s *conhash, long *values, int size)
     vnodes.values = values;
     vnodes.size = size;
     vnodes.cur = 0;
-    util_rbtree_mid_travel(&(conhash->vnode_tree), __get_vnodes, &vnodes);
+	util_rbtree_mid_travel((util_rbtree_t*)&(conhash->vnode_tree), __get_vnodes, &vnodes);
 }
 
 u_int conhash_get_vnodes_num(const struct conhash_s *conhash)

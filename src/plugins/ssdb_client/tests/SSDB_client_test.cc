@@ -18,6 +18,21 @@ int main(int argc, char* argv[])
 	}
 
 	ssdb::Status s;
+	int64_t ret;
+	for (int i = 0; i < 10000; i++)
+	{
+		s = client->incr("IncrId", 1, &ret);
+		if (!s.ok())
+		{
+			printf("incr failed: %s\n", s.code().c_str());
+			return 0;
+		}
+
+		printf("IncrId: %"PRId64"\n", ret);
+	}
+
+	return 0;
+
 	s = client->hset("test", "111111", "xf");
 	if (!s.ok())
 	{

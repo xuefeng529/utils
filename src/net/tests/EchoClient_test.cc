@@ -86,8 +86,8 @@ private:
 			{
 				LOG_INFO << "connecting completed.";
 			}
-			int cnt = 1;
-			conn->setContext(cnt);
+			//int cnt = 1;
+			//conn->setContext(cnt);
 			//conn->send("my very good time");
 			//LOG_DEBUG << "*** connected " << current;
 			//conn->send(static_cast<void*>(g_text), sizeof(g_text));
@@ -134,6 +134,9 @@ private:
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
 	{
 		//LOG_INFO << "onHeartbeat";
+		/*static int count = 0;
+		count++;
+		LOG_INFO << "count: " << count;*/
 		conn->send("hearbeat");
 	}
 

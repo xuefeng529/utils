@@ -58,7 +58,7 @@ void TcpConnection::handleEvent(struct bufferevent *bev, short events, void *ctx
 	}
 	else if (events & BEV_EVENT_ERROR)
 	{
-		LOG_DEBUG << "TcpConnection::handleEvent[" << conn->name_ << "]:" << " BEV_EVENT_ERROR: "
+		LOG_WARN << "TcpConnection::handleEvent[" << conn->name_ << "]:" << " BEV_EVENT_ERROR: "
 			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
 		conn->handleError();
 		return;

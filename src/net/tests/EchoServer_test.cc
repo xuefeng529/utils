@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
 	net::EventLoop loop;
 	//g_loop = &loop;
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-	EchoServer server(&loop, listenAddr, 60);
+	EchoServer server(&loop, listenAddr, 180);
 	server.start();
 	loop.loop();
 	//log.stop();
