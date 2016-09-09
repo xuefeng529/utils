@@ -64,7 +64,7 @@ void TcpServer::start()
 {
 	if (started_.getAndSet(1) == 0)
 	{
-		threadPool_->start();
+		threadPool_->start(threadInitCallback_);
 		loop_->runInLoop(boost::bind(&Acceptor::listen, get_pointer(acceptor_)));
 	}
 }

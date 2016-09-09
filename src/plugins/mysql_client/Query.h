@@ -2,6 +2,7 @@
 #define PLUGIN_MYSQL_CLIENT_QUERY_H
 
 #include "plugins/mysql_client/Row.h"
+#include "plugins/mysql_client/ConnectionPool.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
@@ -14,22 +15,16 @@ namespace plugin
 namespace mysql
 {
 
-class Connection;
-class ConnectionPool;
-typedef boost::shared_ptr<ConnectionPool> ConnectionPoolPtr;
-
 const size_t kMaxConnections = 16;
 
 /// 测试数据库是否连通
 /// @host: 需要连接的数据库IP地址
 /// @port: 需要连接的数据库服务端口号
-/// @db: 需要连接的数据库名
 /// @user: 连接数据库用的用户名
 /// @password: 连接数据库用的密码
 /// @return: 成功true,失败false
 bool ping(const std::string& host,
 		  uint16_t port,
-		  const std::string& db,
 		  const std::string& user,
 		  const std::string& password);
 
@@ -43,7 +38,6 @@ bool ping(const std::string& host,
 /// @return: 成功true,失败false
 bool initDefaultConnectionPool(const std::string& host,
 							   uint16_t port,
-							   const std::string& db,
 							   const std::string& user,
 							   const std::string& password,
 							   size_t maxConnections = kMaxConnections);
@@ -52,6 +46,7 @@ class Query : boost::noncopyable
 {
 public:
 	Query();
+	Query(const ConnectionPtr& conn);
 	Query(const ConnectionPoolPtr& connPool);
 	~Query();
 
@@ -81,6 +76,7 @@ private:
 
 	ConnectionPoolPtr connPool_;
 	typedef boost::shared_ptr<Connection> ConnectionPtr;
+	bool belongToPool_;
 	ConnectionPtr conn_;
 	MYSQL_RES* result_;
 	bool stored_;

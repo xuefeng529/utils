@@ -22,8 +22,8 @@ public:
 
 	Row()
 		: mysqlRow_(NULL),
-		fieldsCount_(0),
-		nameIndexMap_(NULL)
+		  fieldsCount_(0),
+		  nameIndexMap_(NULL)
 	{ }
 
 	Row(MYSQL_ROW mysqlRow, const FieldNameIndexMap* nameIndexMap);

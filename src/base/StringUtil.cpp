@@ -11,27 +11,27 @@
 namespace base
 {
 
-void StringUtil::removeLast(std::string* source, char c)
+void StringUtil::removeLast(std::string* src, char c)
 {
-	std::string::size_type pos = source->rfind(c);
-	if (pos + 1 == source->length())
+	std::string::size_type pos = src->rfind(c);
+	if (pos + 1 == src->length())
 	{
-		source->erase(pos);
+		src->erase(pos);
 	}
 }
 
-void StringUtil::removeLast(std::string* source, const std::string& sep)
+void StringUtil::removeLast(std::string* src, const std::string& sep)
 {
-	std::string::size_type pos = source->rfind(sep);
+	std::string::size_type pos = src->rfind(sep);
 	if (pos != std::string::npos)
 	{
-		source->erase(pos);
+		src->erase(pos);
 	}
 }
 
-void StringUtil::toUpper(char* source)
+void StringUtil::toUpper(char* src)
 {
-    char* p = source;
+    char* p = src;
 	while (*p != '\0')
     {
 		if ((*p >= 'a') && (*p <= 'z'))
@@ -42,9 +42,9 @@ void StringUtil::toUpper(char* source)
     }
 }
 
-void StringUtil::toLower(char* source)
+void StringUtil::toLower(char* src)
 {
-	char* p = source;
+	char* p = src;
 	while (*p != '\0')
     {
 		if ((*p >= 'A') && (*p <= 'Z'))
@@ -55,23 +55,23 @@ void StringUtil::toLower(char* source)
     }
 }
 
-void StringUtil::toUpper(std::string* source)
+void StringUtil::toUpper(std::string* src)
 {
 	/// 只修改大小写，可以这样做
-	char* p = const_cast<char*>(source->c_str());
+	char* p = const_cast<char*>(src->c_str());
 	toUpper(p);
 }
 
-void StringUtil::toLower(std::string* source)
+void StringUtil::toLower(std::string* src)
 {
-	char* p = const_cast<char*>(source->c_str());
+	char* p = const_cast<char*>(src->c_str());
     toLower(p);
 }
 
-void StringUtil::trim(char* source)
+void StringUtil::trim(char* src)
 {
     char* space = NULL;
-    char* p = source;
+    char* p = src;
 	while (' ' == *p)
 	{
 		++p;
@@ -79,7 +79,7 @@ void StringUtil::trim(char* source)
 
     for (;;)
     {
-        *source = *p;
+        *src = *p;
         if ('\0' == *p)
         {
 			if (space != NULL)
@@ -92,7 +92,7 @@ void StringUtil::trim(char* source)
         {
 			if (NULL == space)
 			{
-				space = source;
+				space = src;
 			}
         }
         else
@@ -100,14 +100,14 @@ void StringUtil::trim(char* source)
             space = NULL;
         }
 
-        ++source;
+        ++src;
         ++p;
     }
 }
 
-void StringUtil::trimLeft(char* source)
+void StringUtil::trimLeft(char* src)
 {
-    char* p = source;
+    char* p = src;
 	while (isspace(*p))
 	{
 		++p;
@@ -115,20 +115,20 @@ void StringUtil::trimLeft(char* source)
 
     for (;;)
     {
-        *source = *p;
+        *src = *p;
 		if ('\0' == *p)
 		{
 			break;
 		}
-        ++source;
+        ++src;
         ++p;
     }
 }
 
-void StringUtil::trimRight(char* source)
+void StringUtil::trimRight(char* src)
 {
     char* space = NULL;
-    char* p = source;
+    char* p = src;
     for (;;)
     {
         if ('\0' == *p)
@@ -155,60 +155,89 @@ void StringUtil::trimRight(char* source)
     }
 }
 
-void StringUtil::trim(std::string* source)
+void StringUtil::trim(std::string* src)
 {
-    trimLeft(source);
-    trimRight(source);
+    trimLeft(src);
+    trimRight(src);
 }
 
-void StringUtil::trimLeft(std::string* source)
+void StringUtil::trimLeft(std::string* src)
 {
     /// 不能直接对c_str()进行修改，因为长度发生了变化
-    size_t length = source->length();
+    size_t length = src->length();
     char* tmp = new char[length+1];
-    strncpy(tmp, source->c_str(), length);
+    strncpy(tmp, src->c_str(), length);
     tmp[length] = '\0';
     trimLeft(tmp);
-    *source = tmp;
+    *src = tmp;
 	delete[] tmp;
 }
 
-void StringUtil::trimRight(std::string* source)
+void StringUtil::trimRight(std::string* src)
 {
     /// 不能直接对c_str()进行修改，因为长度发生了变
-    size_t length = source->length();
+    size_t length = src->length();
     char* tmp = new char[length+1];
-	strncpy(tmp, source->c_str(), length);
+	strncpy(tmp, src->c_str(), length);
 	tmp[length] = '\0';
 	trimRight(tmp);
-	*source = tmp;
+	*src = tmp;
 	delete[] tmp;
 }
 
-void StringUtil::split(const std::string& source, const std::string& sep, std::vector<std::string>* tokens)
+void StringUtil::split(const std::string& src, const std::string& sep, std::vector<std::string>* tokens)
 {
 	tokens->clear();
 	std::string::size_type pos = 0;
 	std::string::size_type oldPos = 0;
 	do
 	{
-		pos = source.find(sep, oldPos);
+		pos = src.find(sep, oldPos);
 		if (pos == oldPos)
 		{
 			oldPos = pos + 1;
 		}
 		else if (pos == std::string::npos)
 		{
-			tokens->push_back(source.substr(oldPos));
+			tokens->push_back(src.substr(oldPos));
 			break;
 		}
 		else
 		{
-			tokens->push_back(source.substr(oldPos, pos - oldPos));
+			tokens->push_back(src.substr(oldPos, pos - oldPos));
 			oldPos = pos + 1;
 		}
-		oldPos = source.find_first_not_of(sep, oldPos);
+		oldPos = src.find_first_not_of(sep, oldPos);
 	} while (pos != std::string::npos && oldPos != std::string::npos);
+}
+
+std::string StringUtil::byteToHexStr(const char* src, size_t len)
+{
+	std::string ret;
+	char buf[3];
+	for (size_t i = 0; i < len; i++)
+	{
+		snprintf(buf, sizeof(buf), "%02X", static_cast<uint8_t>(src[i]));
+		ret.append(buf);
+	}
+	return ret;
+}
+
+std::string StringUtil::hexStrToByte(const char* str, size_t len)
+{
+	std::string ret;
+	ret.resize(len / 2);
+	for (size_t i = 0; i < len; i+=2)
+	{
+		sscanf(&str[i], "%2hhX", &*ret.begin() + i / 2);
+	}
+
+	return ret;
+}
+
+std::string StringUtil::hexStrToByte(const std::string& str)
+{
+	return hexStrToByte(str.c_str(), str.size());
 }
 
 uint32_t StringUtil::hashCode(const char* str)

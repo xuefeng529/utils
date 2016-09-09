@@ -1,6 +1,4 @@
 #include "plugins/mysql_client/Query.h"
-#include "plugins/mysql_client/ConnectionPool.h"
-#include "plugins/mysql_client/Connection.h"
 #include "base/Logging.h"
 
 #include <stdio.h>
@@ -13,14 +11,13 @@ namespace mysql
 
 bool ping(const std::string& host,
 		  uint16_t port,
-	      const std::string& db,
 	      const std::string& user,
 	      const std::string& password)
 {
 	MYSQL mysql;
 	mysql_init(&mysql);
 	if (mysql_real_connect(&mysql,
-		host.c_str(), user.c_str(), password.c_str(), db.c_str(), port, NULL, 0) == NULL)
+		host.c_str(), user.c_str(), password.c_str(), NULL, port, NULL, 0) == NULL)
 	{
 		LOG_ERROR << "mysql_real_connect error " << mysql_errno(&mysql) << ": "
 			<< mysql_error(&mysql);
@@ -33,7 +30,6 @@ bool ping(const std::string& host,
 
 bool initDefaultConnectionPool(const std::string& host,
 							   uint16_t port,
-							   const std::string& db,
 							   const std::string& user,
 							   const std::string& password,
 							   size_t maxCount)
@@ -41,7 +37,7 @@ bool initDefaultConnectionPool(const std::string& host,
 	MYSQL mysql;
 	mysql_init(&mysql);
 	if (mysql_real_connect(&mysql,
-		host.c_str(), user.c_str(), password.c_str(), db.c_str(), port, NULL, 0) == NULL)
+		host.c_str(), user.c_str(), password.c_str(), NULL, port, NULL, 0) == NULL)
 	{
 		LOG_ERROR << "mysql_real_connect error " << mysql_errno(&mysql) << ": "
 			<< mysql_error(&mysql);
@@ -49,20 +45,32 @@ bool initDefaultConnectionPool(const std::string& host,
 	}
 	
 	mysql_close(&mysql);
-	theConnPool.reset(new ConnectionPool(host, port, db, user, password, maxCount));
+	theConnPool.reset(new ConnectionPool(host, port, user, password, maxCount));
 	return true;
 }
 
 Query::Query()
-	: conn_(theConnPool->get()),
+	: belongToPool_(true),
+	  conn_(theConnPool->get()),
 	  result_(NULL),
 	  rowsCount_(0),
 	  fieldsCount_(0)
 {
 }
 
+Query::Query(const ConnectionPtr& conn)
+	: belongToPool_(false),
+	  conn_(conn),
+	  result_(NULL),
+	  rowsCount_(0),
+	  fieldsCount_(0)
+{
+
+}
+
 Query::Query(const ConnectionPoolPtr& connPool)
 	: connPool_(connPool),
+	  belongToPool_(true),
 	  conn_(connPool_->get()),
 	  result_(NULL),
 	  rowsCount_(0),
@@ -78,7 +86,7 @@ Query::~Query()
 		mysql_free_result(result_);
 	}
 	
-	if (conn_)
+	if (belongToPool_ && conn_)
 	{
 		if (connPool_)
 		{

@@ -10,7 +10,6 @@ namespace mysql
 
 bool Connection::connect(const std::string& host,
 						 uint16_t port,
-						 const std::string& db,
 						 const std::string& user,
 						 const std::string& password)
 {
@@ -20,7 +19,7 @@ bool Connection::connect(const std::string& host,
 	mysql_options(&mysql_, MYSQL_OPT_RECONNECT, &autoReconnect);
 
 	if (mysql_real_connect(&mysql_,
-		host.c_str(), user.c_str(), password.c_str(), db.c_str(), port, NULL, 0) == NULL)
+		host.c_str(), user.c_str(), password.c_str(), NULL, port, NULL, 0) == NULL)
 	{
 		LOG_ERROR << "mysql_real_connect of  Connection::connect error " << mysql_errno(&mysql_) << ": "
 			<< mysql_error(&mysql_);

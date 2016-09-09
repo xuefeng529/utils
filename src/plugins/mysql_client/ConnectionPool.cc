@@ -1,5 +1,4 @@
 #include "plugins/mysql_client/ConnectionPool.h"
-#include "plugins/mysql_client/Connection.h"
 
 namespace plugin
 {
@@ -23,7 +22,7 @@ ConnectionPtr ConnectionPool::get()
 	if (!conn && conns_.size() < maxConnections_)
 	{
 		conn.reset(new Connection());
-		if (conn->connect(host_, port_, db_, user_, password_))
+		if (conn->connect(host_, port_, user_, password_))
 		{
 			conn->setInUsed(true);
 			conns_.push_back(conn);

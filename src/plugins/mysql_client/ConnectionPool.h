@@ -2,6 +2,7 @@
 #define PLUGIN_MYSQL_CLIENT_CONNECTION_POOL_H
 
 #include "base/Mutex.h"
+#include "plugins/mysql_client/Connection.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
@@ -13,21 +14,16 @@ namespace plugin
 namespace mysql
 {
 
-class Connection;
-typedef boost::shared_ptr<Connection> ConnectionPtr;
-
 class ConnectionPool : boost::noncopyable
 {
 public:
 	ConnectionPool(const std::string& host,
 			       uint16_t port,
-				   const std::string& db,
 				   const std::string& user,
 				   const std::string& password,
 		           size_t maxConnections)
 	: host_(host),
 	  port_(port),
-	  db_(db),
 	  user_(user),
 	  password_(password),
 	  maxConnections_(maxConnections)
@@ -43,7 +39,6 @@ private:
 
 	std::string host_;
 	uint16_t port_;
-	std::string db_;
 	std::string user_;
 	std::string password_;
 	size_t maxConnections_;
@@ -51,6 +46,8 @@ private:
 	base::MutexLock lock_;
 	ConnectionList conns_;
 };
+
+typedef boost::shared_ptr<ConnectionPool> ConnectionPoolPtr;
 
 extern boost::scoped_ptr<ConnectionPool> theConnPool;
 

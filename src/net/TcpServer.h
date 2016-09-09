@@ -28,6 +28,10 @@ public:
 			  time_t readIdle = 0);
 	~TcpServer();
 
+	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+	void setThreadInitCallback(const ThreadInitCallback& cb)
+	{ threadInitCallback_ = cb; }
+
 	void setConnectionCallback(const ConnectionCallback& cb)
 	{ connectionCallback_ = cb; }
 
@@ -66,6 +70,7 @@ private:
 	typedef std::map<std::string, TcpConnectionPtr> ConnectionMap;
 	ConnectionMap connections_;
 	base::AtomicInt32 started_;
+	ThreadInitCallback threadInitCallback_;
 
 	/*typedef boost::weak_ptr<TcpConnection> WeakTcpConnectionPtr;
 	struct Entry

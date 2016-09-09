@@ -21,8 +21,7 @@ public:
 	~Connection() { disconnect(); }
 
 	bool connect(const std::string& host,
-				 uint16_t port, 
-				 const std::string& db,
+				 uint16_t port,
 				 const std::string& user,
 				 const std::string& password);
 
@@ -45,6 +44,8 @@ private:
 	bool connected_;
 	bool inUsed_;
 };
+
+typedef boost::shared_ptr<Connection> ConnectionPtr;
 
 } // namespace mysql
 } // namespace plugin
