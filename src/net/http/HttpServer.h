@@ -18,10 +18,12 @@ public:
 			   const InetAddress& listenAddr,
 			   const std::string& name);
 
+	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+	void setThreadInitCallback(const ThreadInitCallback& cb)
+	{ threadInitCallback_ = cb; }
+
 	void setHttpCallback(const HttpCallback& cb)
-	{
-		httpCallback_ = cb;
-	}
+	{ httpCallback_ = cb; }
 
 	void setThreadNum(int numThreads)
 	{
@@ -36,6 +38,7 @@ private:
 
 	TcpServer server_;
 	HttpCallback httpCallback_;
+	ThreadInitCallback threadInitCallback_;
 };
 
 } // namespace net

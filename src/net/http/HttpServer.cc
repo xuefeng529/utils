@@ -47,6 +47,7 @@ void HttpServer::start()
 {
 	LOG_WARN << "HttpServer[" << server_.name()
 		<< "] starts listenning on " << server_.ipPort();
+	server_.setThreadInitCallback(threadInitCallback_);
 	server_.start();
 }
 
