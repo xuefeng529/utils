@@ -1,5 +1,6 @@
 #include "net/TcpClient.h"
 #include "base/Thread.h"
+#include "base/Atomic.h"
 #include "base/Logging.h"
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
@@ -19,11 +20,11 @@ using namespace net;
 
 char g_text[4*1024];
 
-int numThreads = 0;
 class EchoClient;
 boost::ptr_vector<EchoClient> clients;
 int current = 0;
-int numClosed = 0;
+base::AtomicInt32 numConn;
+//base::AtomicInt32 numClosed;
 
 const char* url = "GET /UserCfgGet.aspx?a=6&b=1,600002 HTTP/1.0\r\n"
 "Accept: */*\r\n"
@@ -73,19 +74,15 @@ private:
 			<< conn->peerAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
-			//clients[current].disconnect();
 			++current;
 			if (static_cast<size_t>(current) < clients.size())
 			{
 				clients[current].connect();
 			}
-			else
-			{
-				LOG_INFO << "connecting completed.";
-			}
+			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
 			//int cnt = 1;
 			//conn->setContext(cnt);
 			//conn->send("my very good time");
@@ -95,8 +92,7 @@ private:
 		}
 		else
 		{
-			numClosed++;
-			LOG_INFO << "numClosed: " << numClosed;
+			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
 		}
 	}
 
@@ -167,7 +163,6 @@ int main(int argc, char* argv[])
 			char buf[32];
 			snprintf(buf, sizeof buf, "%d", i + 1);
 			clients.push_back(new EchoClient(&loop, serverAddr, buf, 30, 8));
-			clients[i].connect();
 		}
 
 		clients[current].connect();

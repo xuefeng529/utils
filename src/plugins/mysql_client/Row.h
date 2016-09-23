@@ -20,12 +20,7 @@ class Row
 public:
 	typedef std::map<std::string, uint32_t> FieldNameIndexMap;
 
-	Row()
-		: mysqlRow_(NULL),
-		  fieldsCount_(0),
-		  nameIndexMap_(NULL)
-	{ }
-
+	Row();
 	Row(MYSQL_ROW mysqlRow, const FieldNameIndexMap* nameIndexMap);
 
 	size_t fieldsCount() const
@@ -58,7 +53,7 @@ private:
 
 	MYSQL_ROW mysqlRow_;
 	size_t fieldsCount_;
-	FieldNameIndexMap* nameIndexMap_;
+	const FieldNameIndexMap* nameIndexMap_;
 	std::vector<std::string> row_;
 };
 

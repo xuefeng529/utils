@@ -8,11 +8,26 @@ namespace plugin
 namespace mysql
 {
 
+Connection::Connection() 
+	: connected_(false)
+{
+}
+
+Connection::~Connection()
+{ 
+	disconnect();
+}
+
 bool Connection::connect(const std::string& host,
 						 uint16_t port,
 						 const std::string& user,
 						 const std::string& password)
 {
+	if (connected_)
+	{
+		return true;
+	}
+	
 	mysql_init(&mysql_);
 
 	my_bool autoReconnect = 1; ///< 设置自动重连接

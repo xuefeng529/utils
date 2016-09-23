@@ -5,6 +5,19 @@ namespace plugin
 namespace mysql
 {
 
+ConnectionPool::ConnectionPool(const std::string& host,
+	                           uint16_t port,
+		                       const std::string& user,
+		                       const std::string& password,
+		                       size_t maxConnections)
+    : host_(host),
+	  port_(port),
+	  user_(user),
+	  password_(password),
+	  maxConnections_(maxConnections)
+{
+}
+
 ConnectionPtr ConnectionPool::get()
 {
 	ConnectionPtr conn;

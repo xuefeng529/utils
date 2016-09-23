@@ -8,15 +8,22 @@ namespace plugin
 namespace mysql
 {
 
+Row::Row()
+	: mysqlRow_(NULL),
+	  fieldsCount_(0),
+	  nameIndexMap_(NULL)
+{
+}
+
 Row::Row(MYSQL_ROW mysqlRow, const FieldNameIndexMap* nameIndexMap)
 	: mysqlRow_(mysqlRow),
 	  fieldsCount_(nameIndexMap->size()),
-	  nameIndexMap_(const_cast<FieldNameIndexMap*>(nameIndexMap))
+	  nameIndexMap_(nameIndexMap)
 {
 	row_.reserve(fieldsCount_);
 	for (size_t i = 0; i < fieldsCount_; ++i)
 	{
-		row_.push_back(mysqlRow_[i] != NULL ? mysqlRow_[i] : "NULL");
+		row_.push_back(mysqlRow_[i] != NULL ? mysqlRow_[i] : "");
 	}
 }
 

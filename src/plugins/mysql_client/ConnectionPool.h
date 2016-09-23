@@ -18,16 +18,10 @@ class ConnectionPool : boost::noncopyable
 {
 public:
 	ConnectionPool(const std::string& host,
-			       uint16_t port,
-				   const std::string& user,
-				   const std::string& password,
-		           size_t maxConnections)
-	: host_(host),
-	  port_(port),
-	  user_(user),
-	  password_(password),
-	  maxConnections_(maxConnections)
-	{ }
+		           uint16_t port,
+		           const std::string& user,
+		           const std::string& password,
+		           size_t maxConnections);
 
 	ConnectionPtr get();
 	void release(const ConnectionPtr& conn);

@@ -3,6 +3,7 @@
 #include "base/AsyncLogging.h"
 #include "base/TimeZone.h"
 #include "base/ThreadPool.h"
+#include "base/Atomic.h"
 #include "net/TcpServer.h"
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
@@ -17,8 +18,8 @@
 net::EventLoop* g_loop;
 
 int numThreads = 0;
-int numConn = 0;
-int numClosed = 0;
+base::AtomicInt32 numConn;
+//base::AtomicInt32 numClosed;
 
 char g_text[8*1024];
 
@@ -73,14 +74,14 @@ private:
 			<< conn->localAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (!conn->connected())
 		{
-			numClosed++;
-			LOG_INFO << "numClosed: " << numClosed;
+			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
 		}
 		else
 		{
+			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
 			//int cnt = 0;
 			//conn->setContext(cnt);
 			//conn->send("my very good time");

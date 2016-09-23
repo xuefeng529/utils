@@ -17,8 +17,8 @@ namespace mysql
 class Connection : boost::noncopyable
 {
 public:
-	Connection() : connected_(false) { }
-	~Connection() { disconnect(); }
+	Connection();
+	~Connection();
 
 	bool connect(const std::string& host,
 				 uint16_t port,
