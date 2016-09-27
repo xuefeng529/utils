@@ -1,9 +1,30 @@
 #include "base/StringUtil.h"
-#include <stdio.h>
 
-int main(int agrc, char* argv[])
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, char* argv[])
 {
-	char byteBuf[] = { 0x9A, 0xBC };
+	if (argc < 3)
+	{
+		fprintf(stdout, "Usage: %s content flag\n", argv[0]);
+		abort();
+	}
+
+	if (atoi(argv[2]) == 1)
+	{
+		std::string hexStr = base::StringUtil::byteToHexStr(argv[1], strlen(argv[1]));
+		fprintf(stdout, "To hex: %s\n", hexStr.c_str());
+	}
+	else
+	{
+		std::string byteStr = base::StringUtil::hexStrToByte(argv[1], strlen(argv[1]));
+		fprintf(stdout, "To byte: %s\n", byteStr.c_str());
+	}
+
+	return 0;
+	/*char byteBuf[] = { 0x9A, 0xBC };
 	std::string hexStr = base::StringUtil::byteToHexStr(byteBuf, sizeof(byteBuf));
 	fprintf(stdout, "%s\n", hexStr.c_str());
 	std::string byteStr = base::StringUtil::hexStrToByte(hexStr.c_str(), hexStr.size());
@@ -20,5 +41,5 @@ int main(int agrc, char* argv[])
 		fprintf(stdout, "%s: %u\n", values[i], base::StringUtil::hashCode(values[i]));
 	}
 	
-	return 0;
+	return 0;*/
 }
