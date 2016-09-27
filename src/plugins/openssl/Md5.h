@@ -8,10 +8,9 @@ namespace plugin
 namespace openssl
 {
 
-class Md5
+namespace Md5
 {
-public:
-	static std::string strToMd5(const std::string& str);
+	std::string strToMd5(const std::string& str);
 };
 
 } // namespace openssl
