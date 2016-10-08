@@ -24,3 +24,9 @@ target_link_libraries(TimeZone_test base)
 
 add_executable(StringUtil_test StringUtil_test.cc)
 target_link_libraries(StringUtil_test base)
+
+add_executable(Hash_test Hash_test.cc)
+target_link_libraries(Hash_test base)
+
+add_executable(FileUtil_test FileUtil_test.cc)
+target_link_libraries(FileUtil_test base)

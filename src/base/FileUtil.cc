@@ -11,15 +11,73 @@
 
 using namespace base;
 
-bool FileUtil::isDirectory(const char* path)
+bool FileUtil::fileExists(const std::string& filename)
 {
-	struct stat stats;
-	if (lstat(path, &stats) == 0 && S_ISDIR(stats.st_mode))
+	struct stat st;
+	return stat(filename.c_str(), &st) == 0;
+}
+
+bool FileUtil::isDirectory(const std::string& filename)
+{
+	struct stat st;
+	if (stat(filename.c_str(), &st) == -1)
 	{
-		return true;
+		return false;
 	}
-		
-	return false;
+
+	return S_ISDIR(st.st_mode);
+}
+
+bool FileUtil::isFile(const std::string& filename)
+{
+	struct stat st;
+	if (stat(filename.c_str(), &st) == -1)
+	{
+		return false;
+	}
+
+	return S_ISREG(st.st_mode);
+}
+
+bool FileUtil::getFileContents(const std::string& filename, std::string* content)
+{
+	char buf[8192];
+	FILE *fp = fopen(filename.c_str(), "rb");
+	if (!fp)
+	{
+		return false;
+	}
+
+	while (!feof(fp) && !ferror(fp))
+	{
+		size_t n = fread(buf, 1, sizeof(buf), fp);
+		if (n > 0)
+		{
+			content->append(buf, n);
+		}
+	}
+
+	if (ferror(fp))
+	{
+		fclose(fp);
+		return false;
+	}
+	
+	fclose(fp);
+	return true;
+}
+
+bool FileUtil::putFileContents(const std::string& filename, const std::string& content)
+{
+	FILE *fp = fopen(filename.c_str(), "wb");
+	if (!fp)
+	{
+		return false;
+	}
+
+	size_t n = fwrite(content.data(), 1, content.size(), fp);
+	fclose(fp);
+	return (n == content.size() ? true : false);
 }
 
 FileUtil::AppendFile::AppendFile(const char* filename)

@@ -12,8 +12,11 @@ namespace base
 namespace FileUtil
 {
 
-// �Ƿ�ΪĿ¼
-bool isDirectory(const char* path);
+bool fileExists(const std::string& filename);
+bool isDirectory(const std::string& filename);
+bool isFile(const std::string& filename);
+bool getFileContents(const std::string& filename, std::string* content);
+bool putFileContents(const std::string& filename, const std::string& content);
 
 // read small file < 64KB
 class ReadSmallFile : boost::noncopyable

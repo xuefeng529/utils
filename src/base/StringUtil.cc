@@ -327,10 +327,7 @@ int32_t StringUtil::strToInt32(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
@@ -346,10 +343,7 @@ uint32_t StringUtil::strToUInt32(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
@@ -365,10 +359,7 @@ int64_t StringUtil::strToInt64(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
@@ -384,10 +375,7 @@ uint64_t StringUtil::strToUInt64(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
@@ -403,10 +391,7 @@ float StringUtil::strToFloat(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
@@ -422,10 +407,7 @@ double StringUtil::strToDouble(const std::string& str)
 	}
 	else
 	{
-		if (errno == 0)
-		{
-			errno = EINVAL;
-		}
+		errno = EINVAL;
 	}
 	return ret;
 }
