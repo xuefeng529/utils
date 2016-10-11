@@ -43,7 +43,7 @@ bool FileUtil::getFileContents(const std::string& filename, std::string* content
 {
 	char buf[8192];
 	FILE *fp = fopen(filename.c_str(), "rb");
-	if (!fp)
+	if (fp == NULL)
 	{
 		return false;
 	}
@@ -70,7 +70,7 @@ bool FileUtil::getFileContents(const std::string& filename, std::string* content
 bool FileUtil::putFileContents(const std::string& filename, const std::string& content)
 {
 	FILE *fp = fopen(filename.c_str(), "wb");
-	if (!fp)
+	if (fp == NULL)
 	{
 		return false;
 	}

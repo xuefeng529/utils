@@ -7,7 +7,7 @@
 int main(int argc, char* argv[])
 {
 	char buf[512];
-	while (gets(buf) != NULL)
+	while (fgets(buf, sizeof(buf), stdin) != NULL)
 	{
 		if (strcmp(buf, "quit") == 0)
 		{
