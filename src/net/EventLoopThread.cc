@@ -52,11 +52,11 @@ void EventLoopThread::threadFunc()
 		callback_(&loop);
 	}
 
-  {
+	{
 	  base::MutexLockGuard lock(mutex_);
 	  loop_ = &loop;
 	  cond_.notify();
-  }
+	}
 
 	loop.loop();
 	loop_ = NULL;
