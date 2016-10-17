@@ -9,7 +9,6 @@
 #include <boost/bind.hpp>
 
 #include <errno.h>
-#include <strings.h>
 
 namespace net
 {
@@ -85,8 +84,8 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 	socklen_t addrlen = static_cast<socklen_t>(sizeof(sin));
 	if (getsockname(sockfd, reinterpret_cast<struct sockaddr*>(&sin), &addrlen) < 0)
 	{
-		LOG_SYSERR << "getsockname of TcpServer::newConnection[" << connName << "]"
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+		LOG_SYSERR << "getsockname of TcpServer::newConnection[" << connName << "]: "
+			<< base::strerror_tl(errno);
 		return;
 	}
 

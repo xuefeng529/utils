@@ -24,7 +24,6 @@ public:
 	{
 	}
 
-
 	bool parseRequest(Buffer* buf);
 
 	bool gotAll() const

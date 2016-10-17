@@ -75,7 +75,7 @@ void TcpClient::disconnectInLoop()
 		connect_ = false;
 		if (connection_)
 		{
-			connection_->close();
+			connection_->shutdown();
 		}
 	}
 }
@@ -97,7 +97,7 @@ void TcpClient::newConnection(int sockfd)
 	if (getpeername(sockfd, reinterpret_cast<struct sockaddr*>(&peeraddr), &addrlen) < 0)
 	{
 		LOG_SYSERR << "getpeername of TcpClient::newConnection[" << name_ << "]: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 		return;
 	}
 
@@ -112,7 +112,7 @@ void TcpClient::newConnection(int sockfd)
 	if (getsockname(sockfd, reinterpret_cast<struct sockaddr*>(&localaddr), &addrlen) < 0)
 	{
 		LOG_SYSERR << "getsockname of TcpClient::newConnection[" << connName << "]: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 		return;
 	}
 

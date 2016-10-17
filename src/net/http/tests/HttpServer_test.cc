@@ -67,7 +67,7 @@ void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& reques
 	conn->send(buf);
 	if (response.closeConnection())
 	{
-		conn->close();
+		conn->shutdown();
 	}
 }
 

@@ -25,7 +25,7 @@ void defaultHttpCallback(const net::TcpConnectionPtr& conn, const net::HttpReque
 	conn->send(buf);
 	if (response.closeConnection())
 	{
-		conn->close();
+		conn->shutdown();
 	}
 } 
 
@@ -66,7 +66,7 @@ void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer* buf)
 	if (!context->parseRequest(buf))
 	{
 		conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
-		conn->close();
+		conn->shutdown();
 	}
 
 	if (context->gotAll())

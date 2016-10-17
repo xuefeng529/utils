@@ -19,9 +19,8 @@ net::EventLoop* g_loop;
 
 int numThreads = 0;
 base::AtomicInt32 numConn;
-//base::AtomicInt32 numClosed;
-
-char g_text[8*1024];
+const size_t kBufferLen = 4 * 1024;
+char g_text[kBufferLen];
 
 typedef boost::weak_ptr<net::TcpConnection> WeakTcpConnectionPtr;
 
@@ -74,7 +73,7 @@ private:
 			<< conn->localAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (!conn->connected())
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
@@ -82,6 +81,7 @@ private:
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+			//conn->shutdown();
 			//int cnt = 0;
 			//conn->setContext(cnt);
 			//conn->send("my very good time");
@@ -106,29 +106,16 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+		/*std::string msg;
+		buffer->retrieveAsString(1, &msg);
+		LOG_INFO << "recved: " << msg;*/
 		//buffer->retrieveAll();
-		//std::string msg;
-		//buffer->retrieveAllAsString(&msg);
-		//if (msg == "quit\r\n")
-		//{
-		//	//conn->close();
-		//	loop_->quit();
-		//}
-		//else
-		//{
-		//	conn->send(msg);
-		//}
+		
 		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
 		conn->send(sendBuffer);
-		/*int cnt = boost::any_cast<int>(conn->getContext());
-		cnt++;
-		conn->setContext(cnt);
-		if (cnt == 10)
-		{
-		conn->close();
-		}*/
+		conn->shutdown();
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
@@ -180,7 +167,7 @@ int main(int argc, char* argv[])
 	net::EventLoop loop;
 	//g_loop = &loop;
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-	EchoServer server(&loop, listenAddr, 180);
+	EchoServer server(&loop, listenAddr, 0);
 	server.start();
 	loop.loop();
 	//log.stop();

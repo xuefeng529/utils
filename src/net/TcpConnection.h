@@ -77,7 +77,8 @@ public:
 	void send(const void* message, size_t len);
 	void send(const BufferPtr& message);
 
-	void close();
+	void shutdown();
+	void forceClose();
 	
 	void connectEstablished();
 	void connectDestroyed();
@@ -99,6 +100,7 @@ private:
 	static void handleEvent(struct bufferevent *bev, short events, void *ctx);
 
 	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
+
 	void sendInLoop(const void* data, size_t len);
 	void sendInLoop(const std::string& data);
 	void sendBufferInLoop(const BufferPtr& data);
@@ -111,7 +113,8 @@ private:
 	void enableWriting();
 	void disableWriting();
 	void disableAll();
-	void closeInLoop();
+	void shutdownInLoop();
+	void forceCloseInLoop();
 	const char* stateToString() const;
 
 	EventLoop* loop_;
@@ -127,7 +130,6 @@ private:
 	WriteCompleteCallback writeCompleteCallback_;
 	CloseCallback closeCallback_;
 	State state_;
-	bool writing_;
 	boost::any context_;
 	//boost::any otherContext_;
 	struct bufferevent* bev_;

@@ -74,7 +74,7 @@ private:
 			<< conn->peerAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
 			++current;

@@ -17,7 +17,7 @@ int Config::parseValue(char *str, char *key, char *val)
 	char *p, *p1, *name, *value;
 	p = str;
 	// ȥǰ�ÿո�
-	while ((*p) == ' ' || (*p) == '\t' || (*p) == '\r' || (*p) == '\n')
+	while (isspace(*p))
 	{
 		p++;
 	}
@@ -26,7 +26,7 @@ int Config::parseValue(char *str, char *key, char *val)
 	while (p1 > p)
 	{
 		p1--;
-		if (*p1 == ' ' || *p1 == '\t' || *p1 == '\r' || *p1 == '\n')
+		if (isspace(*p1))
 		{
 			continue;
 		}
