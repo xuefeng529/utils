@@ -11,6 +11,8 @@
 
 namespace base
 {
+namespace daemon
+{
 
 void regfilelock(int lockfile)
 {
@@ -99,7 +101,7 @@ void daemonize(const char* pidfile)
 		perror("Fork\n");
 		abort();
 	}
-	
+
 	if (pid)
 	{
 		fprintf(stdout, "Info: Forked background with PID: [%d]\n", pid);
@@ -117,6 +119,7 @@ void daemonize(const char* pidfile)
 	regfilelock(lockfile);
 }
 
+} // namespace daemon
 } // namespace base
 
 #endif // BASE_DAEMON_H

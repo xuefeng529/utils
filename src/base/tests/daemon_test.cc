@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-	base::daemonize(argv[1]);
+	base::daemon::daemonize(argv[1]);
 	while (1)
 	{
 		sleep(1);
