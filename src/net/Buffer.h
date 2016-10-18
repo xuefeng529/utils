@@ -34,6 +34,7 @@ public:
 	void appendInt8(int8_t x);
 	/// 尽量减少复制,函数调用后buffer中的数据被移走
 	void removeBuffer(Buffer* buffer);
+	void removeBuffer(Buffer* buffer, size_t len);
 	void appendBuffer(const Buffer& buffer);
 
 	void prepend(const void* data, size_t len);

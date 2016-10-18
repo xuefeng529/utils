@@ -80,6 +80,11 @@ void Buffer::removeBuffer(Buffer* buffer)
 	evbuffer_remove_buffer(buffer->buffer_, buffer_, buffer->length());
 }
 
+void Buffer::removeBuffer(Buffer* buffer, size_t len)
+{
+	evbuffer_remove_buffer(buffer->buffer_, buffer_, len);
+}
+
 void Buffer::appendBuffer(const Buffer& buffer)
 {
 	std::string data;
