@@ -80,6 +80,30 @@ void TcpClient::disconnectInLoop()
 	}
 }
 
+void TcpClient::send(const char* message)
+{
+	if (connection_)
+	{
+		connection_->send(message);
+	}
+}
+
+void TcpClient::send(const std::string& message)
+{
+	if (connection_)
+	{
+		connection_->send(message);
+	}
+}
+
+void TcpClient::send(const void* message, size_t len)
+{
+	if (connection_)
+	{
+		connection_->send(message, len);
+	}
+}
+
 void TcpClient::handleHearbeat()
 {
 	if (hearbeatCallback_ && connection_)

@@ -115,14 +115,16 @@ void Logger::Impl::formatTime()
   if (seconds != t_lastSecond)
   {
     t_lastSecond = seconds;
-    struct tm tm_time;
+	struct tm tm_time;
+	memset(&tm_time, 0, sizeof(tm_time));
     if (g_logTimeZone.valid())
     {
       tm_time = g_logTimeZone.toLocalTime(seconds);
     }
     else
     {
-      ::gmtime_r(&seconds, &tm_time); // FIXME TimeZone::fromUtcTime
+      //::gmtime_r(&seconds, &tm_time); // FIXME TimeZone::fromUtcTime
+		localtime_r(&seconds, &tm_time);
     }
 
     int len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d %02d:%02d:%02d",

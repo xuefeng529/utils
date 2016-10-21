@@ -41,7 +41,8 @@ class EchoServer
 public:
 	struct Entry
 	{
-		int msgCout;
+		size_t numBytes;
+		int cnt;
 	};
 
 	typedef boost::shared_ptr<Entry> EntryPtr;
@@ -77,45 +78,37 @@ private:
 		if (!conn->connected())
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
+			Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
+			LOG_ERROR << "recved the number of byte: " << entry->numBytes / 1024;
+			if (entry->numBytes != 4 * 1024 * 10)
+			{
+				LOG_ERROR << "recved the number of byte error: ";
+			}
 		}
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			//conn->shutdown();
-			//int cnt = 0;
-			//conn->setContext(cnt);
-			//conn->send("my very good time");
+			Entry entry = { 0, 0 };
+			conn->setContext(entry);
 		}
-		//if (conn->connected())
-		//{
-		//	numConn++;
-		//	if (numConn == 20000)
-		//	{
-		//		LOG_INFO << "Total conns: " << numConn;
-		//	}
-		//	//EntryPtr entry(new Entry());
-		//	//entry->msgCout = 0;
-		//	//conn->setContext(entry);
-		//	//conn->send(static_cast<void*>(g_text), sizeof(g_text));
-		//}
-		//else
-		//{
-		//	LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
-		//}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
-		/*std::string msg;
-		buffer->retrieveAsString(1, &msg);
-		LOG_INFO << "recved: " << msg;*/
-		//buffer->retrieveAll();
-		
-		net::BufferPtr sendBuffer(new net::Buffer());
-		sendBuffer->removeBuffer(buffer);
-		conn->send(sendBuffer);
-		conn->shutdown();
+		LOG_INFO << conn->name() << ": " << buffer->length();
+		Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
+		if (entry->cnt < 10)
+		{
+			entry->numBytes += buffer->length();
+			net::BufferPtr sendBuffer(new net::Buffer());
+			sendBuffer->removeBuffer(buffer);
+			conn->send(sendBuffer);
+			entry->cnt++;
+		}
+		else
+		{
+			conn->shutdown();
+		}
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)

@@ -28,6 +28,10 @@ public:
 	void connect();
 	void disconnect();
 
+	void send(const char* message);
+	void send(const std::string& message);
+	void send(const void* message, size_t len);
+
 	EventLoop* getLoop() const { return loop_; }
 	bool retry() const;
 	void enableRetry() { retry_ = true; }

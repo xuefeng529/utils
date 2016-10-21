@@ -112,18 +112,20 @@ std::string LogFile::getLogFileName(const std::string& dir, const std::string& b
   filename = dir + "/" + basename;
 
   char timebuf[32];
-  struct tm tm;
+  struct tm tm_time;
+  memset(&tm_time, 0, sizeof(tm_time));
   *now = time(NULL);
   if (g_logTimeZone.valid())
   {
-	  tm = g_logTimeZone.toLocalTime(*now);
+	  tm_time = g_logTimeZone.toLocalTime(*now);
   }
   else
   {
-	  gmtime_r(now, &tm);
+	  //gmtime_r(now, &tm);
+	  localtime_r(now, &tm_time);
   }
   //gmtime_r(now, &tm); // FIXME: localtime_r ?
-  strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S", &tm);
+  strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S", &tm_time);
   filename += timebuf;
 
   //filename += ProcessInfo::hostname();

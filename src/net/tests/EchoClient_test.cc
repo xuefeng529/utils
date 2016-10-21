@@ -18,7 +18,7 @@
 using namespace base;
 using namespace net;
 
-char g_text[4*1024];
+std::string g_text(4096, 'a');
 
 class EchoClient;
 boost::ptr_vector<EchoClient> clients;
@@ -83,32 +83,31 @@ private:
 				clients[current].connect();
 			}
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			//int cnt = 1;
-			//conn->setContext(cnt);
-			//conn->send("my very good time");
-			//LOG_DEBUG << "*** connected " << current;
-			//conn->send(static_cast<void*>(g_text), sizeof(g_text));
+			size_t numBytes = 0;
+			conn->setContext(numBytes);
 			conn->send(g_text);
 		}
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
+			size_t numBytes = boost::any_cast<size_t>(conn->getContext());
+			LOG_ERROR << "recved the number of byte: " << numBytes / 1024;
+			if (numBytes != 4 * 1024 * 10)
+			{
+				LOG_ERROR << "recved the number of byte error: ";
+			}
 		}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
+		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+		
+		size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
+		*numBytes += buffer->length();
 		std::string msg;
 		buffer->retrieveAllAsString(&msg);
 		conn->send(msg);
-		LOG_INFO << conn->name() << ": " << msg.size() << " bytes";
-		/*int cnt = boost::any_cast<int>(conn->getContext());
-		cnt++;
-		conn->setContext(cnt);*/
-		/*if (cnt == 10)
-		{
-		conn->close();
-		}*/
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
@@ -146,7 +145,8 @@ int main(int argc, char* argv[])
 	LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
 	if (argc > 2)
 	{
-		memset(g_text, 'c', sizeof(g_text));
+		//memset(g_text, 'c', sizeof(g_text));
+		//g_text[sizeof(g_text)-1] = 0;
 
 		EventLoop loop;
 		InetAddress serverAddr(argv[1], static_cast<uint16_t>(atoi(argv[2])));
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
 		{
 			char buf[32];
 			snprintf(buf, sizeof buf, "%d", i + 1);
-			clients.push_back(new EchoClient(&loop, serverAddr, buf, 30, 8));
+			clients.push_back(new EchoClient(&loop, serverAddr, buf, 30, 0));
 		}
 
 		clients[current].connect();
