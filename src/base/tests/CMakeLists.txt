@@ -33,3 +33,6 @@ target_link_libraries(FileUtil_test base)
 
 add_executable(daemon_test daemon_test.cc)
 target_link_libraries(daemon_test base)
+
+add_executable(AsyncLogging_test AsyncLogging_test.cc)
+target_link_libraries(AsyncLogging_test base)

@@ -26,7 +26,7 @@ void LengthHeaderCodec::onMessage(const TcpConnectionPtr& conn, Buffer* buffer)
 		{
 			buffer->retrieve(kHeaderLen);
 			Buffer message;
-			buffer->removeBuffer(&message, len);
+			message.removeBuffer(buffer, len);
 			messageCallback_(conn, &message);
 		}
 		else
