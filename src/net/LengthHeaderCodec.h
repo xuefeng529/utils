@@ -15,6 +15,7 @@ public:
 
 	void onMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 
+	void send(const TcpConnectionPtr& conn, const net::BufferPtr& message);
 	void send(const TcpConnectionPtr& conn, const char* message, size_t len);
 	void send(const TcpConnectionPtr& conn, const std::string& message);
 

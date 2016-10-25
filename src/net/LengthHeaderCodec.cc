@@ -36,14 +36,19 @@ void LengthHeaderCodec::onMessage(const TcpConnectionPtr& conn, Buffer* buffer)
 	}
 }
 
+void LengthHeaderCodec::send(const TcpConnectionPtr& conn, const net::BufferPtr& message)
+{
+	int32_t slen = static_cast<int32_t>(message->length());
+	int32_t be32 = sockets::hostToNetwork32(slen);
+	message->prepend(&be32, sizeof(be32));
+	conn->send(message);
+}
+
 void LengthHeaderCodec::send(const TcpConnectionPtr& conn, const char* message, size_t len)
 {
 	BufferPtr buffer(new Buffer());
 	buffer->append(message, len);
-	int32_t slen = static_cast<int32_t>(len);
-	int32_t be32 = sockets::hostToNetwork32(slen);
-	buffer->prepend(&be32, sizeof(be32));
-	conn->send(buffer);
+	send(conn, buffer);
 }
 
 void LengthHeaderCodec::send(const TcpConnectionPtr& conn, const std::string& message)
