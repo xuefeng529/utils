@@ -22,7 +22,7 @@ void StringUtil::removeLast(std::string* src, char c)
 
 void StringUtil::removeLast(std::string* src, const std::string& sep)
 {
-	std::string::size_type pos = src->rfind(sep);
+	size_t pos = src->rfind(sep);
 	if (pos != std::string::npos)
 	{
 		src->erase(pos);
@@ -68,97 +68,48 @@ void StringUtil::toLower(std::string* src)
     toLower(p);
 }
 
-void StringUtil::trim(char* src)
-{
-    char* space = NULL;
-    char* p = src;
-	while (' ' == *p)
-	{
-		++p;
-	}
-
-    for (;;)
-    {
-        *src = *p;
-        if ('\0' == *p)
-        {
-			if (space != NULL)
-			{
-				*space = '\0';
-			}
-            break;
-        }
-        else if (isspace(*p))
-        {
-			if (NULL == space)
-			{
-				space = src;
-			}
-        }
-        else
-        {
-            space = NULL;
-        }
-
-        ++src;
-        ++p;
-    }
-}
-
 void StringUtil::trimLeft(char* src)
 {
     char* p = src;
-	while (isspace(*p))
+	while (*p != '\0' && isspace(*p))
 	{
 		++p;
 	}
 
-    for (;;)
-    {
-        *src = *p;
-		if ('\0' == *p)
-		{
-			break;
-		}
-        ++src;
-        ++p;
-    }
+	if (p == src)
+	{
+		return;
+	}
+
+	size_t remain = strlen(p) + 1;
+	memmove(src, p, remain);
 }
 
 void StringUtil::trimRight(char* src)
 {
-    char* space = NULL;
-    char* p = src;
-    for (;;)
-    {
-        if ('\0' == *p)
-        {
-			if (space != NULL)
-			{
-				*space = '\0';
-			}
-            break;
-        }
-        else if (isspace(*p))
-        {
-			if (NULL == space)
-			{
-				space = p;
-			}
-        }
-        else
-        {
-            space = NULL;
-        }
+	size_t len = strlen(src);
+	if (len == 0)
+	{
+		return;
+	}
 
-        ++p;
-    }
+	char* end = src + len - 1;
+	char* p = end;
+	while (p >= src && isspace(*p))
+	{
+		p--;
+	}
+
+	if (p != end)
+	{
+		*(p + 1) = '\0';
+	}
 }
 
-void StringUtil::trim(std::string* src)
+void StringUtil::trim(char* src)
 {
-    trimLeft(src);
-    trimRight(src);
+	trimLeft(src);
+	trimRight(src);
 }
 
 void StringUtil::trimLeft(std::string* src)
@@ -185,11 +136,29 @@ void StringUtil::trimRight(std::string* src)
 	delete[] tmp;
 }
 
-void StringUtil::split(const std::string& src, const std::string& sep, std::vector<std::string>* tokens)
+void StringUtil::trim(std::string* src)
 {
-	tokens->clear();
-	std::string::size_type pos = 0;
-	std::string::size_type oldPos = 0;
+	trimLeft(src);
+	trimRight(src);
+}
+
+bool StringUtil::equal(const std::string& str1, const std::string& str2, bool nocase)
+{
+	if (nocase)
+	{
+		return (strncasecmp(str1.c_str(), str2.c_str(), str2.length()) == 0);
+	}
+	else
+	{
+		return (strncmp(str1.c_str(), str2.c_str(), str2.length()) == 0);
+	}
+}
+
+void StringUtil::split(const std::string& src, const std::string& sep, std::vector<std::string>* ret)
+{
+	ret->clear();
+	size_t pos = 0;
+	size_t oldPos = 0;
 	do
 	{
 		pos = src.find(sep, oldPos);
@@ -199,74 +168,75 @@ void StringUtil::split(const std::string& src, const std::string& sep, std::vect
 		}
 		else if (pos == std::string::npos)
 		{
-			tokens->push_back(src.substr(oldPos));
+			ret->push_back(src.substr(oldPos));
 			break;
 		}
 		else
 		{
-			tokens->push_back(src.substr(oldPos, pos - oldPos));
+			ret->push_back(src.substr(oldPos, pos - oldPos));
 			oldPos = pos + 1;
 		}
 		oldPos = src.find_first_not_of(sep, oldPos);
 	} while (pos != std::string::npos && oldPos != std::string::npos);
 }
 
-std::string StringUtil::byteToHexStr(const char* src, size_t len)
+void StringUtil::replace(std::string* src, const std::string& sub, const std::string& str)
 {
-	std::string ret;
+	for (size_t pos = src->find(sub); pos != std::string::npos; pos = src->find(sub))
+	{
+		src->replace(pos, sub.size(), str);
+	}
+}
+
+void StringUtil::byteToHex(const char* src, size_t len, std::string* ret)
+{
+	ret->clear();
 	char buf[3];
 	for (size_t i = 0; i < len; i++)
 	{
 		snprintf(buf, sizeof(buf), "%02X", static_cast<uint8_t>(src[i]));
-		ret.append(buf);
+		ret->append(buf);
 	}
-	return ret;
 }
 
-std::string StringUtil::hexStrToByte(const char* str, size_t len)
+void StringUtil::byteToHex(const std::string& src, std::string* ret)
 {
-	std::string ret;
+	byteToHex(src.data(), src.size(), ret);
+}
+
+void StringUtil::hexToByte(const char* str, size_t len, std::string* ret)
+{
 	if (len == 0 || (len%2) != 0)
 	{
-		return ret;
+		return;
 	}
 	
-	ret.resize(len / 2);
+	ret->clear();
+	ret->resize(len / 2);
 	for (size_t i = 0; i < len; i+=2)
 	{
-		sscanf(&str[i], "%2hhX", &*ret.begin() + i / 2);
+		sscanf(&str[i], "%2hhX", const_cast<char*>(ret->data()) + i / 2);
 	}
+}
 
+void StringUtil::hexToByte(const std::string& str, std::string* ret)
+{
+	hexToByte(str.data(), str.size(), ret);
+}
+
+uint64_t StringUtil::hash(const char* str)
+{
+	uint64_t ret = 0;
+	while (*str != '\0')
+	{
+		ret = ret * 131 + (*str++);
+	}
 	return ret;
 }
 
-std::string StringUtil::hexStrToByte(const std::string& str)
+uint64_t StringUtil::hash(const std::string& str)
 {
-	return hexStrToByte(str.c_str(), str.size());
-}
-
-uint32_t StringUtil::hashCode(const char* str)
-{
-	uint32_t g;
-	uint32_t h = 0;
-	const char *p = str;
-	size_t len = strlen(str);
-	while (p < str + len)
-	{
-		h = (h << 4) + *p++;
-		if ((g = (h & 0xF0000000)))
-		{
-			h = h ^ (g >> 24);
-			h = h ^ g;
-		}
-	}
-
-	return h;
-}
-
-uint32_t StringUtil::hashCode(const std::string& str)
-{
-	return hashCode(str.c_str());
+	return hash(str.c_str());
 }
 
 std::string StringUtil::int32ToStr(int32_t v)

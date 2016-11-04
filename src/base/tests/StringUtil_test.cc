@@ -14,12 +14,14 @@ int main(int argc, char* argv[])
 
 	if (atoi(argv[2]) == 1)
 	{
-		std::string hexStr = base::StringUtil::byteToHexStr(argv[1], strlen(argv[1]));
+		std::string hexStr;
+		base::StringUtil::byteToHex(argv[1], strlen(argv[1]), &hexStr);
 		fprintf(stdout, "To hex: %s\n", hexStr.c_str());
 	}
 	else
 	{
-		std::string byteStr = base::StringUtil::hexStrToByte(argv[1], strlen(argv[1]));
+		std::string byteStr;
+		base::StringUtil::hexToByte(argv[1], strlen(argv[1]), &byteStr);
 		fprintf(stdout, "To byte: %s\n", byteStr.c_str());
 	}
 

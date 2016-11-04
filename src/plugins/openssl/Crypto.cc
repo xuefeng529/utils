@@ -6,12 +6,10 @@
 
 namespace plugin
 {
-namespace openssl
-{
 
 static const uint8_t g_cbcIv[8] = { '0', '1', 'A', 'B', 'a', 'b', '9', '8' };
 
-bool Crypto::desEncrypt(const std::string& plaintext, const std::string& key, std::string* ciphertext)
+bool OpenSSL::desEncrypt(const std::string& plaintext, const std::string& key, std::string* ciphertext)
 {
 	DES_cblock keyEncrypt;
 	DES_cblock ivec;
@@ -25,7 +23,7 @@ bool Crypto::desEncrypt(const std::string& plaintext, const std::string& key, st
 	memset(output, 0, len);
 	DES_ncbc_encrypt(reinterpret_cast<const uint8_t*>(plaintext.data()), output,
 		plaintext.size()/* + 1*/, &keySchedule, &ivec, DES_ENCRYPT);
-	*ciphertext = base::StringUtil::byteToHexStr(reinterpret_cast<char*>(output), len/* + 16*/);
+	base::StringUtil::byteToHex(reinterpret_cast<char*>(output), len/* + 16*/, ciphertext);
 	delete[] output;
 	return true;
 
@@ -118,7 +116,7 @@ bool Crypto::desEncrypt(const std::string& plaintext, const std::string& key, st
 //	return 0;
 }
 
-bool Crypto::desDecrypt(const std::string& ciphertext, const std::string& key, std::string* plaintext)
+bool OpenSSL::desDecrypt(const std::string& ciphertext, const std::string& key, std::string* plaintext)
 {
 	DES_cblock keyEncrypt;
 	DES_cblock ivec;
@@ -137,5 +135,4 @@ bool Crypto::desDecrypt(const std::string& ciphertext, const std::string& key, s
 	return true;
 }
 
-} // namespace openssl
 } // namespace plugin

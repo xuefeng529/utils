@@ -5,16 +5,13 @@
 
 namespace plugin
 {
-namespace openssl
+namespace OpenSSL
 {
+	
+bool desEncrypt(const std::string& plaintext, const std::string& key, std::string* ciphertext);
+bool desDecrypt(const std::string& ciphertext, const std::string& key, std::string* plaintext);
 
-namespace Crypto
-{
-	bool desEncrypt(const std::string& plaintext, const std::string& key, std::string* ciphertext);
-	bool desDecrypt(const std::string& ciphertext, const std::string& key, std::string* plaintext);
-};
-
-} // namespace openssl
+} // namespace OpenSSL
 } // namespace plugin
 
 #endif // PLUGIN_OPENSSL_CRYPTO_H

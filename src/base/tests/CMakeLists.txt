@@ -25,8 +25,8 @@ target_link_libraries(TimeZone_test base)
 add_executable(StringUtil_test StringUtil_test.cc)
 target_link_libraries(StringUtil_test base)
 
-add_executable(Hash_test Hash_test.cc)
-target_link_libraries(Hash_test base)
+add_executable(murmur3_hash_test murmur3_hash_test.cc)
+target_link_libraries(murmur3_hash_test base)
 
 add_executable(FileUtil_test FileUtil_test.cc)
 target_link_libraries(FileUtil_test base)

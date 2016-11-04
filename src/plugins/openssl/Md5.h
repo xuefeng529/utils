@@ -5,15 +5,12 @@
 
 namespace plugin
 {
-namespace openssl
+namespace OpenSSL
 {
 
-namespace Md5
-{
-	std::string strToMd5(const std::string& str);
-};
+void md5(const std::string& data, std::string* ret);
 
-} // namespace openssl
+} // namespace OpenSSL
 } // namespace plugin
 
 #endif // PLUGIN_OPENSSL_MD5_H
