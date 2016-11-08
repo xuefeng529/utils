@@ -157,27 +157,32 @@ bool StringUtil::equal(const std::string& str1, const std::string& str2, bool no
 void StringUtil::split(const std::string& src, const std::string& sep, std::vector<std::string>* ret)
 {
 	ret->clear();
+	if (src.empty())
+	{
+		return;
+	}
+
 	size_t pos = 0;
 	size_t oldPos = 0;
 	do
 	{
 		pos = src.find(sep, oldPos);
-		if (pos == oldPos)
+		if (pos != std::string::npos)
 		{
-			oldPos = pos + 1;
+			ret->push_back(src.substr(oldPos, pos - oldPos));
 		}
-		else if (pos == std::string::npos)
+		else
 		{
 			ret->push_back(src.substr(oldPos));
 			break;
 		}
-		else
+
+		oldPos = pos + sep.size();
+		if (oldPos == src.size())
 		{
-			ret->push_back(src.substr(oldPos, pos - oldPos));
-			oldPos = pos + 1;
+			ret->push_back(std::string());
 		}
-		oldPos = src.find_first_not_of(sep, oldPos);
-	} while (pos != std::string::npos && oldPos != std::string::npos);
+	} while (oldPos < src.size());
 }
 
 void StringUtil::replace(std::string* src, const std::string& sub, const std::string& str)
