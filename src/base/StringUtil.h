@@ -59,7 +59,7 @@ void split(const std::string& src, const std::string& sep, std::vector<std::stri
 /// @src: Ô´×Ö·û´®
 /// @sub: ±»Ìæ»»µÄ×Ö·û´®
 /// @str: Ìæ»»µÄ×Ö·û´®
-void replace(std::string* src, const std::string& sub, const std::string& str);
+void replace(std::string* src, const std::string& sep, const std::string& str);
 
 /// ×Ö½ÚÁ÷×ª»»³ÉÊ®Áù½øÖÆ×Ö·û´®
 void byteToHex(const char* src, size_t len, std::string* ret);

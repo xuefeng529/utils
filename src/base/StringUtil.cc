@@ -185,11 +185,12 @@ void StringUtil::split(const std::string& src, const std::string& sep, std::vect
 	} while (oldPos < src.size());
 }
 
-void StringUtil::replace(std::string* src, const std::string& sub, const std::string& str)
+void StringUtil::replace(std::string* src, const std::string& sep, const std::string& str)
 {
-	for (size_t pos = src->find(sub); pos != std::string::npos; pos = src->find(sub))
+	for (size_t pos = src->find(sep); pos != std::string::npos; 
+		pos = src->find(sep, pos + sep.size()))
 	{
-		src->replace(pos, sub.size(), str);
+		src->replace(pos, sep.size(), str);
 	}
 }
 
