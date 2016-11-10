@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	{
 		std::string plaintext;
 		std::string raw;
-		base::StringUtil::hexToByte(argv[1], strlen(argv[1]), &raw);
+		base::StringUtil::hexToByte(argv[1], &raw);
 		plugin::OpenSSL::desDecrypt(raw, argv[2], &plaintext);
 		fprintf(stdout, "plaintext: %s\n", plaintext.c_str());
 	}

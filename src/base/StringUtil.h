@@ -66,7 +66,7 @@ void byteToHex(const char* src, size_t len, std::string* ret);
 void byteToHex(const std::string& src, std::string* ret);
 
 /// 十六进制字符串转换成字节流
-void hexToByte(const char* str, size_t len, std::string* ret);
+void hexToByte(const char* str, std::string* ret);
 void hexToByte(const std::string& str, std::string* ret);
 
 /// bkdrhash function

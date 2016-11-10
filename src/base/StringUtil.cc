@@ -195,12 +195,13 @@ void StringUtil::replace(std::string* src, const std::string& sub, const std::st
 
 void StringUtil::byteToHex(const char* src, size_t len, std::string* ret)
 {
+	static const char kHex[] = "0123456789ABCDEF";
 	ret->clear();
-	char buf[3];
 	for (size_t i = 0; i < len; i++)
 	{
-		snprintf(buf, sizeof(buf), "%02X", static_cast<uint8_t>(src[i]));
-		ret->append(buf);
+		uint8_t c = src[i];
+		ret->push_back(kHex[c >> 4]);
+		ret->push_back(kHex[c & 0x0f]);
 	}
 }
 
@@ -209,24 +210,75 @@ void StringUtil::byteToHex(const std::string& src, std::string* ret)
 	byteToHex(src.data(), src.size(), ret);
 }
 
-void StringUtil::hexToByte(const char* str, size_t len, std::string* ret)
+void StringUtil::hexToByte(const char* str, std::string* ret)
 {
-	if (len == 0 || (len%2) != 0)
+	size_t len = strlen(str);
+	if (len == 0 || (len % 2) != 0)
 	{
 		return;
 	}
-	
+
+	ret->clear();
+	ret->resize(len / 2);
+	uint8_t hex;
+	uint8_t bin;
+	for (size_t i = 0; i < len; i += 2)
+	{
+		hex = str[i];
+		if (hex >= '0' && hex <= '9')
+		{
+			bin = (hex - '0') << 4;
+		}
+		else if (hex >= 'A' && hex <= 'F')
+		{
+			bin = (hex - 'A' + 10) << 4;
+		}
+		else if (hex >= 'a' && hex <= 'f')
+		{
+			bin = (hex - 'a' + 10) << 4;
+		}
+		else
+		{
+			return;
+		}
+
+		hex = str[i+1];
+		if (hex >= '0' && hex <= '9')
+		{
+			bin |= (hex - '0');
+		}
+		else if (hex >= 'A' && hex <= 'F')
+		{
+			bin |= (hex - 'A' + 10);
+		}
+		else if (hex >= 'a' && hex <= 'f')
+		{
+			bin |= (hex - 'a' + 10);
+		}
+		else
+		{
+			return;
+		}
+
+		(*ret)[i / 2] = bin;
+	}
+
+	/*if (len == 0 || (len%2) != 0)
+	{
+	return;
+	}
+
 	ret->clear();
 	ret->resize(len / 2);
 	for (size_t i = 0; i < len; i+=2)
 	{
-		sscanf(&str[i], "%2hhX", const_cast<char*>(ret->data()) + i / 2);
-	}
+	sscanf(&str[i], "%2hhX", const_cast<char*>(ret->data()) + i / 2);
+	}*/
 }
 
 void StringUtil::hexToByte(const std::string& str, std::string* ret)
 {
-	hexToByte(str.data(), str.size(), ret);
+	hexToByte(str.c_str(), ret);
 }
 
 uint64_t StringUtil::hash(const char* str)

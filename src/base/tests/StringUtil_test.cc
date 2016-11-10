@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		std::string byteStr;
-		base::StringUtil::hexToByte(argv[1], strlen(argv[1]), &byteStr);
+		base::StringUtil::hexToByte(argv[1], &byteStr);
 		fprintf(stdout, "To byte: %s\n", byteStr.c_str());
 	}
 
