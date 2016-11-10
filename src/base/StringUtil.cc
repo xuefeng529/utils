@@ -260,7 +260,7 @@ void StringUtil::hexToByte(const char* str, std::string* ret)
 			return;
 		}
 
-		(*ret)[i / 2] = bin;
+		(*ret)[i/2] = bin;
 	}
 }
 
