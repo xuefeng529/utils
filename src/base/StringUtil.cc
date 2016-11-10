@@ -262,18 +262,6 @@ void StringUtil::hexToByte(const char* str, std::string* ret)
 
 		(*ret)[i / 2] = bin;
 	}
-
-	/*if (len == 0 || (len%2) != 0)
-	{
-	return;
-	}
-
-	ret->clear();
-	ret->resize(len / 2);
-	for (size_t i = 0; i < len; i+=2)
-	{
-	sscanf(&str[i], "%2hhX", const_cast<char*>(ret->data()) + i / 2);
-	}*/
 }
 
 void StringUtil::hexToByte(const std::string& str, std::string* ret)
