@@ -1,5 +1,5 @@
-#ifndef PLUGIN_SSDB_CONNECTION_POOL_H
-#define PLUGIN_SSDB_CONNECTION_POOL_H
+#ifndef PLUGIN_SSDB_CONNECTIONPOOL_H
+#define PLUGIN_SSDB_CONNECTIONPOOL_H
 
 #include "base/Mutex.h"
 
@@ -36,4 +36,4 @@ private:
 
 } // namespace ssdb
 
-#endif // PLUGIN_SSDB_CONNECTION_POOL_H
+#endif // PLUGIN_SSDB_CONNECTIONPOOL_H

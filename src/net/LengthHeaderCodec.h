@@ -1,5 +1,5 @@
-#ifndef NET_LENGTH_HEADER_CODEC_H
-#define NET_LENGTH_HEADER_CODEC_H
+#ifndef NET_LENGTHHEADERCODEC_H
+#define NET_LENGTHHEADERCODEC_H
 
 #include "net/TcpConnection.h"
 
@@ -27,4 +27,4 @@ private:
 
 } // namespace net
 
-#endif  // NET_LENGTH_HEADER_CODEC_H
+#endif  // NET_LENGTHHEADERCODEC_H

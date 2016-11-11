@@ -1,5 +1,5 @@
-#ifndef BASE_RW_LOCK_H
-#define BASE_RW_LOCK_H
+#ifndef BASE_RWLOCK_H
+#define BASE_RWLOCK_H
 
 #include <boost/noncopyable.hpp>
 
@@ -81,4 +81,4 @@ private:
 
 } // namespace base
 
-#endif // BASE_RW_LOCK_H
+#endif // BASE_RWLOCK_H

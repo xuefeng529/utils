@@ -1,5 +1,5 @@
-#ifndef BASE_UNIQUE_ID_GENERATOR_H
-#define BASE_UNIQUE_ID_GENERATOR_H
+#ifndef BASE_UNIQUEIDGENERATOR_H
+#define BASE_UNIQUEIDGENERATOR_H
 
 #include <boost/noncopyable.hpp>
 
@@ -35,4 +35,4 @@ private:
 
 } // namespace base
 
-#endif // BASE_UNIQUE_ID_GENERATOR_H
+#endif // BASE_UNIQUEIDGENERATOR_H

@@ -1,5 +1,5 @@
-#ifndef PLUGIN_MYSQL_CLIENT_CONNECTION_POOL_H
-#define PLUGIN_MYSQL_CLIENT_CONNECTION_POOL_H
+#ifndef PLUGIN_MYSQL_CLIENT_CONNECTIONPOOL_H
+#define PLUGIN_MYSQL_CLIENT_CONNECTIONPOOL_H
 
 #include "base/Mutex.h"
 #include "plugins/mysql_client/Connection.h"
@@ -48,4 +48,4 @@ extern boost::scoped_ptr<ConnectionPool> theConnPool;
 } // namespace mysql
 } // namespace plugin
 
-#endif // PLUGIN_MYSQL_CLIENT_CONNECTION_POOL_H
+#endif // PLUGIN_MYSQL_CLIENT_CONNECTIONPOOL_H
