@@ -42,10 +42,17 @@ void TcpConnection::handleWrite(struct bufferevent *bev, void *ctx)
 
 	if (conn->state_ == kDisconnecting)
 	{
-		if (::shutdown(bufferevent_getfd(conn->bev_), SHUT_WR) == -1)
+		if (conn->closeType_ == kShutdown)
 		{
-			LOG_SYSERR << "shutdown[" << conn->name_ << "]: "
-				<< base::strerror_tl(errno);
+			if (::shutdown(bufferevent_getfd(conn->bev_), SHUT_WR) == -1)
+			{
+				LOG_SYSERR << "shutdown[" << conn->name_ << "]: "
+					<< base::strerror_tl(errno);
+			}
+		}
+		else
+		{
+			conn->handleClose();
 		}
 	}
 }
@@ -87,6 +94,7 @@ TcpConnection::TcpConnection(EventLoop* loop,
 	  peerAddr_(peerAddr),
 	  readIdle_(readIdle),
 	  state_(kConnecting),
+	  closeType_(kUnknow),
 	  bev_(NULL)
 {
 	LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this
@@ -177,6 +185,7 @@ void TcpConnection::shutdownInLoop()
 	loop_->assertInLoopThread();
 	if (state_ == kConnected)
 	{
+		closeType_ = kShutdown;
 		setState(kDisconnecting);
 		if (outputBuffer_->length() == 0)
 		{
@@ -184,6 +193,29 @@ void TcpConnection::shutdownInLoop()
 			{
 				LOG_SYSERR << "shutdown[" << name_ << "]: " << base::strerror_tl(errno);
 			}
+		}
+	}
+}
+
+void TcpConnection::close()
+{
+	loop_->runInLoop(boost::bind(
+		&TcpConnection::closeInLoop, shared_from_this()));
+}
+
+void TcpConnection::closeInLoop()
+{
+	loop_->assertInLoopThread();
+	if (state_ == kConnected)
+	{
+		closeType_ = kClose;
+		if (outputBuffer_->length() == 0)
+		{
+			handleClose();
+		}
+		else
+		{
+			setState(kDisconnecting);
 		}
 	}
 }

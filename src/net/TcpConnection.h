@@ -40,6 +40,7 @@ public:
 				  const InetAddress& localAddr,
 				  const InetAddress& peerAddr,
 				  time_t readIdle = 0);
+
 	~TcpConnection();
 
 	bool connected() const
@@ -78,6 +79,7 @@ public:
 	void send(const BufferPtr& message);
 
 	void shutdown();
+	void close();
 	void forceClose();
 	
 	void connectEstablished();
@@ -85,21 +87,13 @@ public:
 	EventLoop* getLoop() const { return loop_; }
 	const std::string& name() const { return name_; }
 
-	/*void setOtherContext(const boost::any& context)
-	{ otherContext_ = context; }
-
-	const boost::any& getOtherContext() const
-	{ return otherContext_; }
-
-	boost::any* getMutableOtherContext()
-	{ return &otherContext_; }*/
-
 private:
 	static void handleRead(struct bufferevent *bev, void *ctx);
 	static void handleWrite(struct bufferevent *bev, void *ctx);
 	static void handleEvent(struct bufferevent *bev, short events, void *ctx);
 
 	enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
+	enum CloseType { kUnknow, kShutdown, kClose };
 
 	void sendInLoop(const void* data, size_t len);
 	void sendInLoop(const std::string& data);
@@ -114,6 +108,7 @@ private:
 	void disableWriting();
 	void disableAll();
 	void shutdownInLoop();
+	void closeInLoop();
 	void forceCloseInLoop();
 	const char* stateToString() const;
 
@@ -130,8 +125,8 @@ private:
 	WriteCompleteCallback writeCompleteCallback_;
 	CloseCallback closeCallback_;
 	State state_;
+	CloseType closeType_;
 	boost::any context_;
-	//boost::any otherContext_;
 	struct bufferevent* bev_;
 };
 

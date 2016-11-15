@@ -167,8 +167,6 @@ void TcpServer::removeConnectionInLoop(const TcpConnectionPtr& conn)
 	size_t n = connections_.erase(conn->name());
 	(void)n;
 	assert(n == 1);
-	EventLoop* ioLoop = conn->getLoop();
-	ioLoop->runInLoop(boost::bind(&TcpConnection::connectDestroyed, conn));
 }
 
 } // namespace net

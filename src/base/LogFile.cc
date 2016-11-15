@@ -58,7 +58,7 @@ void LogFile::flush()
     file_->flush();
   }
 }
-
+#include <iostream>
 void LogFile::append_unlocked(const char* logline, int len)
 {
   file_->append(logline, len);
@@ -69,22 +69,17 @@ void LogFile::append_unlocked(const char* logline, int len)
   }
   else
   {
-    ++count_;
-    if (count_ >= checkEveryN_)
-    {
-      count_ = 0;
-      time_t now = ::time(NULL);
-      time_t thisPeriod_ = now / kRollPerSeconds_ * kRollPerSeconds_;
-      if (thisPeriod_ != startOfPeriod_)
-      {
-        rollFile();
-      }
-      else if (now - lastFlush_ > flushInterval_)
-      {
-        lastFlush_ = now;
-        file_->flush();
-      }
-    }
+	  time_t now = time(NULL);
+	  time_t diff = now - startOfPeriod_;
+	  if (diff >= kRollPerSeconds_)
+	  {
+		  rollFile();
+	  }
+	  else if (now - lastFlush_ > flushInterval_)
+	  {
+		  lastFlush_ = now;
+		  file_->flush();
+	  }
   }
 }
 
@@ -92,13 +87,13 @@ bool LogFile::rollFile()
 {
   time_t now = 0;
   std::string filename = getLogFileName(dir_, basename_, &now);
-  time_t start = now / kRollPerSeconds_ * kRollPerSeconds_;
-
   if (now > lastRoll_)
-  {
-    lastRoll_ = now;
+  {	  
+	struct tm lt = *localtime(&now);
+	lt.tm_hour = lt.tm_min = lt.tm_sec = 0;
+	startOfPeriod_ = mktime(&lt);
+	lastRoll_ = now;
     lastFlush_ = now;
-    startOfPeriod_ = start;
     file_.reset(new FileUtil::AppendFile(filename.c_str()));
     return true;
   }

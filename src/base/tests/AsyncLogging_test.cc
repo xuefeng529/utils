@@ -23,9 +23,15 @@ void initLog(int argc, char* argv[])
 	base::Logger::setLogLevel(base::Logger::INFO);
 	g_asyncLog->start();
 }
-
+#include <iostream>
 int main(int argc, char* argv[])
 {
+	/*while (1)
+	{
+		time_t now = time(NULL);
+		std::cout << now << std::endl;
+		sleep(1);
+	}*/
 	initLog(argc, argv);
 
 	char buf[1024];
@@ -34,8 +40,8 @@ int main(int argc, char* argv[])
 	{
 		snprintf(buf, sizeof(buf), "Logging test %d", i++);
 		LOG_INFO << buf;
-		struct timespec ts = { 0, 500 * 1000 * 1000 };
-		nanosleep(&ts, NULL);
+		/*struct timespec ts = { 0, 500 * 1000 * 1000 };
+		nanosleep(&ts, NULL);*/
 	}
 
 	return 0;
