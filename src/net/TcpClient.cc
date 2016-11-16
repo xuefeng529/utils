@@ -170,6 +170,7 @@ void TcpClient::handleHearbeat()
 void TcpClient::newConnection(int sockfd)
 {
 	loop_->assertInLoopThread();
+	retryDelayS_ = kInitRetryDelayS;
 	struct sockaddr_in peeraddr;
 	bzero(&peeraddr, sizeof(peeraddr));
 	socklen_t addrlen = static_cast<socklen_t>(sizeof(peeraddr));
@@ -247,19 +248,7 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn)
 	{
 		LOG_DEBUG << "TcpClient::removeConnection[" << name_ << "]: Reconnecting to "
 			<< connector_->serverAddress().toIpPort();
-		if (retryDelayS_ < connectingExpire_)
-		{
-			loop_->runAfter(retryDelayS_,
-				boost::bind(&Connector::restart, connector_));
-			retryDelayS_ *= 2;
-		}
-		else
-		{
-			if (connectingExpireCallback_)
-			{
-				connectingExpireCallback_();
-			}
-		}
+		connectingFailed();
 	}
 }
 

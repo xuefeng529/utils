@@ -88,6 +88,8 @@ private:
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+			size_t numBytes = 0;
+			conn->setContext(numBytes);
 			/*Entry entry = { 0, 0 };
 			conn->setContext(entry);*/
 		}
@@ -96,14 +98,16 @@ private:
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
 		//LOG_INFO << conn->name() << ": " << buffer->length();
+		//size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
+		//*numBytes += buffer->length();
 		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
-		if (sendBuffer->length() == 4096)
+		assert(buffer->length() == 0);
+		conn->send(sendBuffer);
+		/*if (*numBytes == 4096)
 		{
-			assert(buffer->length() == 0);
-			conn->send(sendBuffer);
-			conn->close();
-		}
+		conn->close();
+		}*/
 		
 		/*Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
 		if (entry->cnt < 10)

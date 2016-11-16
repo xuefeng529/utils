@@ -18,7 +18,7 @@
 using namespace base;
 using namespace net;
 
-std::string g_text(4096, 'a');
+char g_text[4096];
 
 class EchoClient;
 boost::ptr_vector<EchoClient> clients;
@@ -83,19 +83,19 @@ private:
 				clients[current].connect();
 			}
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			size_t numBytes = 0;
-			conn->setContext(numBytes);
+			/*size_t numBytes = 0;
+			conn->setContext(numBytes);*/
 			conn->send(g_text);
 		}
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
-			size_t numBytes = boost::any_cast<size_t>(conn->getContext());
-			//LOG_ERROR << "recved the number of byte: " << numBytes / 1024;
+			/*size_t numBytes = boost::any_cast<size_t>(conn->getContext());
+			LOG_ERROR << "recved the number of byte: " << numBytes;
 			if (numBytes != 4 * 1024)
 			{
 				LOG_FATAL << "recved the number of byte error: ";
-			}
+			}*/
 		}
 	}
 
@@ -103,11 +103,11 @@ private:
 	{
 		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
 		
-		size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
-		*numBytes += buffer->length();
-		//std::string msg;
-		//buffer->retrieveAllAsString(&msg);
-		//conn->send(msg);
+		/*size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
+		*numBytes += buffer->length();*/
+		std::string msg;
+		buffer->retrieveAllAsString(&msg);
+		conn->send(msg);
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
@@ -123,7 +123,7 @@ private:
 	void onConnectingExpire()
 	{
 		LOG_INFO << "onConnectingExpire";
-		//client_.connect();
+		client_.connect();
 	}
 
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
@@ -132,7 +132,7 @@ private:
 		/*static int count = 0;
 		count++;
 		LOG_INFO << "count: " << count;*/
-		conn->send("hearbeat");
+		//conn->send("hearbeat");
 	}
 
 	EventLoop* loop_;
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
 	if (argc > 2)
 	{
-		//memset(g_text, 'c', sizeof(g_text));
+		memset(g_text, 'c', sizeof(g_text));
 		//g_text[sizeof(g_text)-1] = 0;
 
 		EventLoop loop;
