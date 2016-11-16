@@ -28,6 +28,8 @@ public:
 	void connect();
 	void disconnect();
 
+	/// 避免使用
+	void send(const BufferPtr& message);
 	void send(const char* message);
 	void send(const std::string& message);
 	void send(const void* message, size_t len);
@@ -53,6 +55,19 @@ public:
 
 	void setHearbeatCallback(const HearbeatCallback& cb)
 	{ hearbeatCallback_ = cb; }
+	
+	/// 避免使用
+	TcpConnectionPtr connection()
+	{
+		base::MutexLockGuard lock(mutex_);
+		return connection_;
+	}
+	
+	bool isConnected()
+	{
+		base::MutexLockGuard lock(mutex_);
+		return !connection_;
+	}
 
 private:
 	void newConnection(int sockfd);
@@ -61,6 +76,9 @@ private:
 	void connectInLoop();
 	void disconnectInLoop();
 	void handleHearbeat();
+	void sendInLoop(const void* data, size_t len);
+	void sendInLoop(const std::string& data);
+	void sendBufferInLoop(const BufferPtr& data);
 
 	static const time_t kMaxRetryDelayS = 60;
 	static const time_t kInitRetryDelayS = 2;
@@ -78,6 +96,7 @@ private:
 	HearbeatCallback hearbeatCallback_;
 	bool connect_;
 	int nextConnId_;
+	base::MutexLock mutex_;
 	TcpConnectionPtr connection_;
 	time_t retryDelayS_;
 	bool retry_;

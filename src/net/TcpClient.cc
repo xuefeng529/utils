@@ -82,25 +82,80 @@ void TcpClient::disconnectInLoop()
 
 void TcpClient::send(const char* message)
 {
-	if (connection_)
+	if (loop_->isInLoopThread())
 	{
-		connection_->send(message);
+		sendInLoop(static_cast<const void*>(message), strlen(message));
+	}
+	else
+	{
+		loop_->queueInLoop(boost::bind(
+			&TcpClient::sendInLoop, this, std::string(message)));
 	}
 }
 
 void TcpClient::send(const std::string& message)
 {
-	if (connection_)
+	if (loop_->isInLoopThread())
 	{
-		connection_->send(message);
+		sendInLoop(message);
+	}
+	else
+	{
+		loop_->queueInLoop(boost::bind(
+			&TcpClient::sendInLoop, this, message));
 	}
 }
 
 void TcpClient::send(const void* message, size_t len)
 {
+	if (loop_->isInLoopThread())
+	{
+		sendInLoop(message, len);
+	}
+	else
+	{
+		loop_->queueInLoop(boost::bind(
+			&TcpClient::sendInLoop, this, std::string(static_cast<const char*>(message), len)));
+	}
+}
+
+void TcpClient::send(const BufferPtr& message)
+{
+	if (loop_->isInLoopThread())
+	{
+		sendBufferInLoop(message);
+	}
+	else
+	{
+		loop_->runInLoop(boost::bind(
+			&TcpClient::sendBufferInLoop, this, message));
+	}
+}
+
+void TcpClient::sendInLoop(const void* data, size_t len)
+{
+	loop_->assertInLoopThread();
 	if (connection_)
 	{
-		connection_->send(message, len);
+		connection_->send(data, len);
+	}
+}
+
+void TcpClient::sendInLoop(const std::string& data)
+{
+	loop_->assertInLoopThread();
+	if (connection_)
+	{
+		connection_->send(data);
+	}
+}
+
+void TcpClient::sendBufferInLoop(const BufferPtr& data)
+{
+	loop_->assertInLoopThread();
+	if (connection_)
+	{
+		connection_->send(data);
 	}
 }
 
@@ -147,7 +202,12 @@ void TcpClient::newConnection(int sockfd)
 	conn->setMessageCallback(messageCallback_);
 	conn->setWriteCompleteCallback(writeCompleteCallback_);
 	conn->setCloseCallback(boost::bind(&TcpClient::removeConnection, this, _1));
-	connection_ = conn;
+
+	{
+		base::MutexLockGuard lock(mutex_);
+		connection_ = conn;
+	}
+	
 	conn->connectEstablished();
 }
 
@@ -177,8 +237,12 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn)
 	loop_->assertInLoopThread();
 	assert(loop_ == conn->getLoop());
 	retryDelayS_ = kInitRetryDelayS;
-	connection_.reset();
-	loop_->runInLoop(boost::bind(&TcpConnection::connectDestroyed, conn));
+
+	{
+		base::MutexLockGuard lock(mutex_);
+		connection_.reset();
+	}
+	
 	if (connect_ && retry_)
 	{
 		LOG_DEBUG << "TcpClient::removeConnection[" << name_ << "]: Reconnecting to "

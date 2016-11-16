@@ -177,6 +177,51 @@ int16_t Buffer::peekInt16() const
 	return sockets::networkToHost16(be16);
 }
 
+int64_t Buffer::peekInt64WithOriginalEndian() const
+{
+	assert(length() >= sizeof(int64_t));
+	int64_t be64 = 0;
+	evbuffer_copyout(buffer_, &be64, sizeof(be64));
+	return be64;
+}
+
+int32_t Buffer::peekInt32WithOriginalEndian() const
+{
+	assert(length() >= sizeof(int32_t));
+	int32_t be32 = 0;
+	evbuffer_copyout(buffer_, &be32, sizeof(be32));
+	return be32;
+}
+
+int16_t Buffer::peekInt16WithOriginalEndian() const
+{
+	assert(length() >= sizeof(int16_t));
+	int16_t be16 = 0;
+	evbuffer_copyout(buffer_, &be16, sizeof(be16));
+	return be16;
+}
+
+int64_t Buffer::readInt64WithOriginalEndian()
+{
+	int64_t result = peekInt64WithOriginalEndian();
+	retrieveInt64();
+	return result;
+}
+
+int32_t Buffer::readInt32WithOriginalEndian()
+{
+	int32_t result = peekInt32WithOriginalEndian();
+	retrieveInt32();
+	return result;
+}
+
+int16_t Buffer::readInt16WithOriginalEndian()
+{
+	int16_t result = peekInt16WithOriginalEndian();
+	retrieveInt16();
+	return result;
+}
+
 int8_t Buffer::peekInt8() const
 {
 	assert(length() >= sizeof(int8_t));

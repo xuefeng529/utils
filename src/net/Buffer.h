@@ -58,6 +58,15 @@ public:
 	int32_t peekInt32() const;
 	int16_t peekInt16() const;
 	int8_t peekInt8() const;
+	
+	/// Peek from OriginalEndian
+	int64_t peekInt64WithOriginalEndian() const;
+	int32_t peekInt32WithOriginalEndian() const;
+	int16_t peekInt16WithOriginalEndian() const;
+	
+	int64_t readInt64WithOriginalEndian();
+	int32_t readInt32WithOriginalEndian();
+	int16_t readInt16WithOriginalEndian();
 
 	void retrieve(size_t len);
 	void retrieveInt64();

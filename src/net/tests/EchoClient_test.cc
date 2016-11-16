@@ -54,7 +54,7 @@ public:
 			boost::bind(&EchoClient::onConnectingExpire, this));
 		client_.setHearbeatCallback(
 			boost::bind(&EchoClient::onHeartbeat, this, _1));
-		//client_.enableRetry();
+		client_.enableRetry();
 	}
 
 	void connect()
@@ -91,10 +91,10 @@ private:
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
 			size_t numBytes = boost::any_cast<size_t>(conn->getContext());
-			LOG_ERROR << "recved the number of byte: " << numBytes / 1024;
-			if (numBytes != 4 * 1024 * 10)
+			//LOG_ERROR << "recved the number of byte: " << numBytes / 1024;
+			if (numBytes != 4 * 1024)
 			{
-				LOG_ERROR << "recved the number of byte error: ";
+				LOG_FATAL << "recved the number of byte error: ";
 			}
 		}
 	}
@@ -105,9 +105,9 @@ private:
 		
 		size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
 		*numBytes += buffer->length();
-		std::string msg;
-		buffer->retrieveAllAsString(&msg);
-		conn->send(msg);
+		//std::string msg;
+		//buffer->retrieveAllAsString(&msg);
+		//conn->send(msg);
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);

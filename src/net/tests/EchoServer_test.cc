@@ -78,25 +78,34 @@ private:
 		if (!conn->connected())
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
-			Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
+			/*Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
 			LOG_ERROR << "recved the number of byte: " << entry->numBytes / 1024;
 			if (entry->numBytes != 4 * 1024 * 10)
 			{
-				LOG_ERROR << "recved the number of byte error: ";
-			}
+			LOG_ERROR << "recved the number of byte error: ";
+			}*/
 		}
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			Entry entry = { 0, 0 };
-			conn->setContext(entry);
+			/*Entry entry = { 0, 0 };
+			conn->setContext(entry);*/
 		}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length();
-		Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
+		//LOG_INFO << conn->name() << ": " << buffer->length();
+		net::BufferPtr sendBuffer(new net::Buffer());
+		sendBuffer->removeBuffer(buffer);
+		if (sendBuffer->length() == 4096)
+		{
+			assert(buffer->length() == 0);
+			conn->send(sendBuffer);
+			conn->close();
+		}
+		
+		/*Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
 		if (entry->cnt < 10)
 		{
 			entry->numBytes += buffer->length();
@@ -108,7 +117,7 @@ private:
 		else
 		{
 			conn->shutdown();
-		}
+		}*/
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
