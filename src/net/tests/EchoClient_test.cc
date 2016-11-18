@@ -85,7 +85,7 @@ private:
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
 			/*size_t numBytes = 0;
 			conn->setContext(numBytes);*/
-			conn->send(g_text);
+			conn->send(g_text, sizeof(g_text));
 		}
 		else
 		{

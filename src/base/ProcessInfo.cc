@@ -1,6 +1,7 @@
 #include "base/ProcessInfo.h"
 #include "base/CurrentThread.h"
 #include "base/FileUtil.h"
+#include "base/Logging.h"
 
 #include <algorithm>
 
@@ -12,43 +13,48 @@
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/times.h>
+#include <sys/sysinfo.h>
+#include <sched.h>
+#include <errno.h>
 
 namespace base
 {
 namespace detail
 {
+
 __thread int t_numOpenedFiles = 0;
 int fdDirFilter(const struct dirent* d)
 {
-  if (::isdigit(d->d_name[0]))
-  {
-    ++t_numOpenedFiles;
-  }
-  return 0;
+	if (::isdigit(d->d_name[0]))
+	{
+		++t_numOpenedFiles;
+	}
+	return 0;
 }
 
 __thread std::vector<pid_t>* t_pids = NULL;
 int taskDirFilter(const struct dirent* d)
 {
-  if (::isdigit(d->d_name[0]))
-  {
-    t_pids->push_back(atoi(d->d_name));
-  }
-  return 0;
+	if (::isdigit(d->d_name[0]))
+	{
+		t_pids->push_back(atoi(d->d_name));
+	}
+	return 0;
 }
 
-int scanDir(const char *dirpath, int (*filter)(const struct dirent *))
+int scanDir(const char *dirpath, int(*filter)(const struct dirent *))
 {
-  struct dirent** namelist = NULL;
-  int result = ::scandir(dirpath, &namelist, filter, alphasort);
-  assert(namelist == NULL);
-  return result;
+	struct dirent** namelist = NULL;
+	int result = ::scandir(dirpath, &namelist, filter, alphasort);
+	assert(namelist == NULL);
+	return result;
 }
 
 Timestamp g_startTime = Timestamp::now();
 // assume those won't change during the life time of a process.
 int g_clockTicks = static_cast<int>(::sysconf(_SC_CLK_TCK));
 int g_pageSize = static_cast<int>(::sysconf(_SC_PAGE_SIZE));
+
 }
 }
 
@@ -57,79 +63,79 @@ using namespace base::detail;
 
 pid_t ProcessInfo::pid()
 {
-  return ::getpid();
+	return ::getpid();
 }
 
 std::string ProcessInfo::pidString()
 {
-  char buf[32];
-  snprintf(buf, sizeof buf, "%d", pid());
-  return buf;
+	char buf[32];
+	snprintf(buf, sizeof buf, "%d", pid());
+	return buf;
 }
 
 uid_t ProcessInfo::uid()
 {
-  return ::getuid();
+	return ::getuid();
 }
 
 std::string ProcessInfo::username()
 {
-  struct passwd pwd;
-  struct passwd* result = NULL;
-  char buf[8192];
-  const char* name = "unknownuser";
+	struct passwd pwd;
+	struct passwd* result = NULL;
+	char buf[8192];
+	const char* name = "unknownuser";
 
-  getpwuid_r(uid(), &pwd, buf, sizeof buf, &result);
-  if (result)
-  {
-    name = pwd.pw_name;
-  }
-  return name;
+	getpwuid_r(uid(), &pwd, buf, sizeof buf, &result);
+	if (result)
+	{
+		name = pwd.pw_name;
+	}
+	return name;
 }
 
 uid_t ProcessInfo::euid()
 {
-  return ::geteuid();
+	return ::geteuid();
 }
 
 Timestamp ProcessInfo::startTime()
 {
-  return g_startTime;
+	return g_startTime;
 }
 
 int ProcessInfo::clockTicksPerSecond()
 {
-  return g_clockTicks;
+	return g_clockTicks;
 }
 
 int ProcessInfo::pageSize()
 {
-  return g_pageSize;
+	return g_pageSize;
 }
 
 bool ProcessInfo::isDebugBuild()
 {
 #ifdef NDEBUG
-  return false;
+	return false;
 #else
-  return true;
+	return true;
 #endif
 }
 
 std::string ProcessInfo::hostname()
 {
-  // HOST_NAME_MAX 64
-  // _POSIX_HOST_NAME_MAX 255
-  char buf[256];
-  if (::gethostname(buf, sizeof buf) == 0)
-  {
-    buf[sizeof(buf)-1] = '\0';
-    return buf;
-  }
-  else
-  {
-    return "unknownhost";
-  }
+	// HOST_NAME_MAX 64
+	// _POSIX_HOST_NAME_MAX 255
+	char buf[256];
+	if (::gethostname(buf, sizeof buf) == 0)
+	{
+		buf[sizeof(buf) - 1] = '\0';
+		return buf;
+	}
+	else
+	{
+		return "unknownhost";
+	}
 }
 
 std::string ProcessInfo::procname()
@@ -236,4 +242,23 @@ std::vector<pid_t> ProcessInfo::threads()
   t_pids = NULL;
   std::sort(result.begin(), result.end());
   return result;
+}
+
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+void ProcessInfo::bindThreadToCpu(int cpuIndex)
+{
+	cpu_set_t cpuMask;
+	CPU_ZERO(&cpuMask);
+	CPU_SET(cpuIndex, &cpuMask);
+	if (sched_setaffinity(0, sizeof(cpuMask), &cpuMask) == -1)
+	{
+		fprintf(stderr, "sched_setaffinity: %s\n", base::strerror_tl(errno));
+		abort();
+	}
+}
+#pragma GCC diagnostic error "-Wold-style-cast"
+
+size_t ProcessInfo::getCpuCoresCount()
+{
+	return get_nprocs();
 }
