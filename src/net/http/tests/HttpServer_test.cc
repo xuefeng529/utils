@@ -2,29 +2,33 @@
 #include "net/http/HttpRequest.h"
 #include "net/http/HttpResponse.h"
 #include "net/EventLoop.h"
+#include "base/Atomic.h"
 #include "base/Timestamp.h"
 #include "base/Logging.h"
+#include "base/ProcessInfo.h"
+#include "base/CurrentThread.h"
 
 #include <iostream>
 #include <map>
 
 extern char favicon[555];
-bool benchmark = false;
+base::AtomicInt32 requestNum;
 
 void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& request)
 {
-	std::cout << "Headers " << request.methodString() << " " << request.path() << std::endl;
+	LOG_INFO << requestNum.incrementAndGet();
+	/*LOG_INFO << "Headers " << request.methodString() << " " << request.path();
 	if (!benchmark)
 	{
-		const std::map<std::string, std::string>& headers = request.headers();
-		for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-			it != headers.end();
-			++it)
-		{
-			std::cout << it->first << ": " << it->second << std::endl;
-		}
+	const std::map<std::string, std::string>& headers = request.headers();
+	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
+	it != headers.end();
+	++it)
+	{
+	LOG_INFO << it->first << ": " << it->second;
 	}
-
+	}
+	*/
 	const std::string& connection = request.getHeader("Connection");
 	bool close = connection == "close" ||
 		(request.getVersion() == net::HttpRequest::kHttp10 && connection != "Keep-Alive");
@@ -53,7 +57,15 @@ void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& reques
 		response.setStatusMessage("OK");
 		response.setContentType("text/plain");
 		response.addHeader("Server", "EastMoney");
-		response.setBody("hello, world!\n");
+		response.setBody("hello too!\n");
+	}
+	else if (request.path() == "/UserInfoSet")
+	{
+		response.setStatusCode(net::HttpResponse::k200Ok);
+		response.setStatusMessage("OK");
+		response.setContentType("text/plain");
+		response.addHeader("Server", "EastMoney");
+		response.setBody("return UserInfoSet!\n");
 	}
 	else
 	{
@@ -67,21 +79,17 @@ void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& reques
 	conn->send(buf);
 	if (response.closeConnection())
 	{
-		conn->shutdown();
+		conn->close();
 	}
 }
 
 int main(int argc, char* argv[])
 {
-	int numThreads = 0;
-	if (argc > 2)
-	{
-		benchmark = true;
-		base::Logger::setLogLevel(base::Logger::WARN);
-		numThreads = atoi(argv[2]);
-	}
+	base::Logger::setLogLevel(base::Logger::INFO);
+	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
+	int numThreads = static_cast<int>(base::ProcessInfo::getCpuCoresCount() * 2);
 	net::EventLoop loop;
-	net::HttpServer server(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "dummy");
+	net::HttpServer server(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
 	server.setHttpCallback(onRequest);
 	server.setThreadNum(numThreads);
 	server.start();

@@ -59,7 +59,7 @@ void TcpClient::connectInLoop()
 	loop_->assertInLoopThread();
 	connect_ = true;
 	retryDelayS_ = kInitRetryDelayS;
-	connector_->start();
+	connector_->restart();
 }
 
 void TcpClient::disconnect()

@@ -19,9 +19,10 @@ void printTid()
 	printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
-void print(const char* msg)
+void print(const std::string& msg)
 {
-	printf("msg %s %s\n", Timestamp::now().toString().c_str(), msg);
+	printf("%s: %s\n", Timestamp::now().toString().c_str(), msg.c_str());
+	g_loop->runAfter(1, boost::bind(print, msg));
 }
 
 void cancel(int64_t timerId)
@@ -40,21 +41,24 @@ int main()
 {
 	printTid();
 	sleep(1);
+	
+	EventLoop loop;
+	g_loop = &loop;
+
+	for (int i = 0; i < 10; i++)
 	{
-		EventLoop loop;
-		g_loop = &loop;
-
-		print("main");
-		//loop.runAfter(5, boost::bind(print, "once5"));
-		
-		int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
-		(void)timeId;
-		//loop.runAfter(20, boost::bind(cancel, timeId));
-		//loop.runAfter(22, boost::bind(quit));
-
-		loop.loop();
-		print("main loop exits");
+		char name[32];
+		snprintf(name, sizeof(name), "timer_%d", i);
+		loop.runAfter(1, boost::bind(print, std::string(name)));
 	}
+
+	//int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
+	//(void)timeId;
+	//loop.runAfter(20, boost::bind(cancel, timeId));
+	//loop.runAfter(22, boost::bind(quit));
+
+	loop.loop();
+	print("main loop exits");
 
 	/*sleep(1);
 	{

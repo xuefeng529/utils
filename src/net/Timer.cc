@@ -47,7 +47,7 @@ void Timer::start()
 		if (timeout_ == NULL)
 		{
 			LOG_FATAL << "evtimer_new of Timer::start: "
-				<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+				<< base::strerror_tl(errno);
 		}
 
 		activate();
@@ -71,7 +71,7 @@ void Timer::activate()
 	if (evtimer_add(timeout_, &tv) == -1)
 	{
 		LOG_ERROR << "evtimer_add of Timer::activate: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 }
 

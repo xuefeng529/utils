@@ -4,6 +4,7 @@
 #include "base/TimeZone.h"
 #include "base/ThreadPool.h"
 #include "base/Atomic.h"
+#include "base/daemon.h"
 #include "net/TcpServer.h"
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
@@ -148,8 +149,31 @@ void asyncOutput(const char* msg, int len)
 	g_asyncLog->append(msg, len);
 }
 
+#include <unistd.h>
 int main(int argc, char* argv[])
 {
+	std::string pid = std::string(argv[0]) + ".pid";
+	/*if (daemon(1, 0) == -1)
+	{
+	perror("daemon");
+	return 0;
+	}*/
+	base::daemon::daemonize(pid.c_str());
+	int i = 0;
+	while (true)
+	{
+		/*int n = 10;
+		int b = 0;
+		int c = n / b;
+		(void)c;*/
+		sleep(1);
+		if (i >= 5)
+		{
+			LOG_FATAL << "fatal";
+		}
+		i++;
+	}
+
 	if (argc > 2)
 	{
 		numThreads = atoi(argv[2]);

@@ -21,8 +21,7 @@ void Connector::handleEvent(struct bufferevent *bev, short events, void *ctx)
 	else if (events & BEV_EVENT_ERROR)
 	{
 		connector->setState(kDisconnected);
-		LOG_ERROR << "Connector::handleEvent: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+		LOG_ERROR << "Connector::handleEvent: " << base::strerror_tl(errno);
 		connector->connectingFailedCallback_();
 	}
 }
