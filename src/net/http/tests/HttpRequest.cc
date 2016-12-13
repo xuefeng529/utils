@@ -24,13 +24,15 @@ char g_text[4 * 1024];
 
 class HttpRequest;
 std::vector<HttpRequest*> clients;
-int current = 0;
+int current;
 int connLimit = 1;
 //base::AtomicInt32 connectedNum;
 //base::AtomicInt32 disconnectedNum;
 
 boost::scoped_ptr<base::CountDownLatch> theConnectedLatch;
 boost::scoped_ptr<base::CountDownLatch> theDisconnectedLatch;
+
+base::MutexLock theLock;
 
 int respNum;
 const char* url = 
@@ -92,12 +94,16 @@ private:
 		//LOG_DEBUG << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
-			++current;
-			theConnectedLatch->countDown();
-			if (static_cast<size_t>(current) < clients.size())
 			{
-				clients[current]->connect();
+				base::MutexLockGuard lock(theLock);
+				++current;
+				if (static_cast<size_t>(current) < clients.size())
+				{
+					clients[current]->connect();
+				}
 			}
+			
+			theConnectedLatch->countDown();
 		}
 		else
 		{
@@ -158,7 +164,12 @@ void reconnectThreadFun()
 	{
 		theDisconnectedLatch->wait();
 		theDisconnectedLatch.reset(new base::CountDownLatch(connLimit));
-		current = 0;
+
+		{
+			base::MutexLockGuard lock(theLock);
+			current = 0;
+		}
+
 		clients[current]->connect();
 	}
 }
@@ -194,6 +205,7 @@ int main(int argc, char* argv[])
 			clients.push_back(new HttpRequest(&loop, serverAddr, buf, 60, 0));
 		}
 
+		current = 0;
 		clients[current]->connect();
 		loop.loop();
 	}
