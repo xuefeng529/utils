@@ -27,9 +27,7 @@ void Acceptor::handleAccept(struct evconnlistener *listener,
 void Acceptor::handleAcceptError(struct evconnlistener *listener, void *ctx)
 {
 	struct event_base *base = evconnlistener_get_base(listener);
-	int err = EVUTIL_SOCKET_ERROR();
-	LOG_ERROR << "Got an error " << err << " " << evutil_socket_error_to_string(err) 
-		<< " on the listener. Shutting down.\n";
+	LOG_ERROR << "Acceptor::handleAcceptError: " << base::strerror_tl(errno);
 	(void)base;
 }
 
@@ -52,7 +50,7 @@ void Acceptor::listen()
 	if (listener_ == NULL)
 	{
 		LOG_FATAL << "evconnlistener_new_bind of Acceptor::listen: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 
 	evconnlistener_set_error_cb(listener_, handleAcceptError);

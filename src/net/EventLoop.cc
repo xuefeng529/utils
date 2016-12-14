@@ -41,7 +41,7 @@ void EventLoop::handleRead(struct bufferevent *bev, void *ctx)
 	if (input == NULL)
 	{
 		LOG_ERROR << "bufferevent_get_input of EventLoop::wakup: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 		return;
 	}
 
@@ -80,7 +80,7 @@ EventLoop::EventLoop()
 	if (base_ == NULL)
 	{
 		LOG_FATAL << "event_base_new of EventLoop::EventLoop(): "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 	
 	evutil_socket_t pair[2];
@@ -92,7 +92,7 @@ EventLoop::EventLoop()
 	if (wakeupPair_[0] == NULL || wakeupPair_[1] == NULL)
 	{
 		LOG_FATAL << "bufferevent_socket_new of EventLoop::EventLoop(): "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 	
 	bufferevent_setcb(wakeupPair_[0], handleRead, NULL, handleEvent, this);
@@ -127,7 +127,7 @@ void EventLoop::loop()
 	if (event_base_dispatch(base_) == -1)
 	{
 		LOG_FATAL << "event_base_dispatch of EventLoop::loop: " 
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 }
 
@@ -200,14 +200,14 @@ void EventLoop::wakeup()
 	if (output == NULL)
 	{
 		LOG_FATAL << "bufferevent_get_output of EventLoop::wakeup: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 
 	uint8_t one = 1;
 	if (evbuffer_add(output, &one, sizeof(one)) == -1)
 	{
 		LOG_FATAL << "evbuffer_add of EventLoop::wakup: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 }
 

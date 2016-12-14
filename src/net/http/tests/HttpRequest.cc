@@ -149,6 +149,7 @@ void sendThreadFun()
 	while (true)
 	{
 		theConnectedLatch->wait();
+		LOG_INFO << "after theConnectedLatch->wait";
 		theConnectedLatch.reset(new base::CountDownLatch(connLimit));
 		for (int i = 0; i < connLimit; ++i)
 		{
@@ -163,13 +164,10 @@ void reconnectThreadFun()
 	while (true)
 	{
 		theDisconnectedLatch->wait();
+		LOG_INFO << "after theDisconnectedLatch->wait";
 		theDisconnectedLatch.reset(new base::CountDownLatch(connLimit));
-
-		{
-			base::MutexLockGuard lock(theLock);
-			current = 0;
-		}
-
+		base::MutexLockGuard lock(theLock);
+		current = 0;
 		clients[current]->connect();
 	}
 }

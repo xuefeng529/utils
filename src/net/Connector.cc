@@ -77,7 +77,7 @@ void Connector::connecting()
 	if (bev_ == NULL)
 	{
 		LOG_FATAL << "bufferevent_socket_new of Connector::connecting: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 
 	bufferevent_setcb(bev_, NULL, NULL, handleEvent, this);
@@ -85,7 +85,7 @@ void Connector::connecting()
 	if (bufferevent_socket_connect(bev_, const_cast<struct sockaddr*>(sin), sizeof(struct sockaddr_in)) == -1)
 	{
 		LOG_FATAL << "bufferevent_socket_connect of Connector::connecting: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+			<< base::strerror_tl(errno);
 	}
 	
 	setState(kConnecting);
