@@ -10,25 +10,22 @@
 using namespace base;
 using namespace net;
 
-EventLoop* g_loop;
-
-void callback(int id)
+void callback(int n)
 {
-  printf("id = %d\n", id);
+  printf("id = %d\n", n);
 }
 
-void threadFunc()
+void threadFunc(EventLoop* loop)
 {
   printf("threadFunc(): pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
+  int32_t num = 0;
+  while (num < 5)
+  {
+	  loop->runInLoop(boost::bind(callback, num++));
+	  sleep(1);
+  }
 
-  assert(EventLoop::getEventLoopOfCurrentThread() == NULL);
-  EventLoop loop;
-  assert(EventLoop::getEventLoopOfCurrentThread() == &loop);
-  //loop.runAfter(1.0, callback);
-  loop.runInLoop(boost::bind(callback, 1));
-  loop.runInLoop(boost::bind(callback, 2));
-  loop.runInLoop(boost::bind(callback, 3));
-  loop.loop();
+  loop->quit();
 }
 
 int main()
@@ -39,8 +36,10 @@ int main()
   EventLoop loop;
   assert(EventLoop::getEventLoopOfCurrentThread() == &loop);
 
-  Thread thread(threadFunc);
+  Thread thread(boost::bind(threadFunc, &loop));
   thread.start();
 
   loop.loop();
+
+  printf("exit loop\n");
 }

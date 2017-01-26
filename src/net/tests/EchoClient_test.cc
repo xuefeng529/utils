@@ -74,18 +74,19 @@ private:
 			<< conn->peerAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
+			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+			conn->send(g_text, sizeof(g_text));
 			++current;
 			if (static_cast<size_t>(current) < clients.size())
 			{
 				clients[current].connect();
 			}
-			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+			
 			/*size_t numBytes = 0;
 			conn->setContext(numBytes);*/
-			conn->send(g_text, sizeof(g_text));
 		}
 		else
 		{
@@ -105,9 +106,9 @@ private:
 		
 		/*size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
 		*numBytes += buffer->length();*/
-		std::string msg;
-		buffer->retrieveAllAsString(&msg);
-		conn->send(msg);
+		//std::string msg;
+		//buffer->retrieveAllAsString(&msg);
+		//conn->send(msg);
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
@@ -146,8 +147,7 @@ int main(int argc, char* argv[])
 	if (argc > 2)
 	{
 		memset(g_text, 'c', sizeof(g_text));
-		//g_text[sizeof(g_text)-1] = 0;
-
+		
 		EventLoop loop;
 		InetAddress serverAddr(argv[1], static_cast<uint16_t>(atoi(argv[2])));
 

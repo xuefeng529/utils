@@ -75,7 +75,7 @@ private:
 			<< conn->localAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
 
-		LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (!conn->connected())
 		{
 			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
@@ -89,8 +89,8 @@ private:
 		else
 		{
 			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			size_t numBytes = 0;
-			conn->setContext(numBytes);
+			//size_t numBytes = 0;
+			//conn->setContext(numBytes);
 			/*Entry entry = { 0, 0 };
 			conn->setContext(entry);*/
 		}
@@ -105,6 +105,7 @@ private:
 		sendBuffer->removeBuffer(buffer);
 		assert(buffer->length() == 0);
 		conn->send(sendBuffer);
+		conn->close();
 		/*if (*numBytes == 4096)
 		{
 		conn->close();
@@ -149,31 +150,8 @@ void asyncOutput(const char* msg, int len)
 	g_asyncLog->append(msg, len);
 }
 
-#include <unistd.h>
 int main(int argc, char* argv[])
 {
-	std::string pid = std::string(argv[0]) + ".pid";
-	/*if (daemon(1, 0) == -1)
-	{
-	perror("daemon");
-	return 0;
-	}*/
-	base::daemon::daemonize(pid.c_str());
-	int i = 0;
-	while (true)
-	{
-		/*int n = 10;
-		int b = 0;
-		int c = n / b;
-		(void)c;*/
-		sleep(1);
-		if (i >= 5)
-		{
-			LOG_FATAL << "fatal";
-		}
-		i++;
-	}
-
 	if (argc > 2)
 	{
 		numThreads = atoi(argv[2]);
@@ -185,7 +163,7 @@ int main(int argc, char* argv[])
 	//log.start();
 	//g_asyncLog = &log;
 	base::TimeZone shanghai("/usr/share/zoneinfo/Asia/Shanghai");
-	base::Logger::setTimeZone(shanghai);
+	//base::Logger::setTimeZone(shanghai);
 	base::Logger::setLogLevel(base::Logger::INFO);
 	//base::Logger::setOutput(asyncOutput);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();

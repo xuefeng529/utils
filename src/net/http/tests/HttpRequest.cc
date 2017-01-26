@@ -26,7 +26,7 @@ class HttpRequest;
 std::vector<HttpRequest*> clients;
 int current;
 int connLimit = 1;
-//base::AtomicInt32 connectedNum;
+base::AtomicInt32 connectedNum;
 //base::AtomicInt32 disconnectedNum;
 
 boost::scoped_ptr<base::CountDownLatch> theConnectedLatch;
@@ -39,7 +39,7 @@ const char* url =
 "GET /UserInfoSet?uid=7121013685952264&did=&token=A0000059FAFDEB&mobile=0&appType=102&appVer=6.4.1&flag=31 HTTP/1.0\r\n"
 "Accept: */*\r\n"
 "Connection: close\r\n"
-"Host: 172.16.56.27:9898\r\n"
+"Host: 172.16.40.249:9898\r\n"
 "User-Agent: ApacheBench/2.3\r\n\r\n";
 
 void sendRequest();
@@ -91,23 +91,28 @@ private:
 		<< conn->peerAddress().toIpPort() << " is "
 		<< (conn->connected() ? "UP" : "DOWN");*/
 
-		//LOG_DEBUG << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
+			conn->send(url);
+			connectedNum.increment();
+
 			{
 				base::MutexLockGuard lock(theLock);
 				++current;
-				if (static_cast<size_t>(current) < clients.size())
-				{
-					clients[current]->connect();
-				}
+			}
+
+			if (static_cast<size_t>(current) < clients.size())
+			{
+				clients[current]->connect();
 			}
 			
-			theConnectedLatch->countDown();
+			//theConnectedLatch->countDown();
 		}
 		else
 		{
-			theDisconnectedLatch->countDown();
+			connectedNum.decrement();
+			//theDisconnectedLatch->countDown();
 		}
 	}
 
@@ -115,7 +120,8 @@ private:
 	{
 		std::string msg;
 		buffer->retrieveAllAsString(&msg);
-		LOG_INFO << "the number of response: " << ++respNum;
+		client_.disconnect();
+		//LOG_INFO << "the number of response: " << ++respNum;
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
@@ -127,7 +133,7 @@ private:
 	void onConnectingExpire()
 	{
 		LOG_INFO << "onConnectingExpire";
-		//client_.connect();
+		client_.connect();
 	}
 
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
@@ -143,32 +149,39 @@ private:
 	TcpClient client_;
 };
 
-void sendThreadFun()
+void checkThreadFun()
 {
 	LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
-	while (true)
-	{
-		theConnectedLatch->wait();
-		LOG_INFO << "after theConnectedLatch->wait";
-		theConnectedLatch.reset(new base::CountDownLatch(connLimit));
-		for (int i = 0; i < connLimit; ++i)
-		{
-			clients[i]->send(url);
-		}
-	}
-}
 
-void reconnectThreadFun()
-{
-	LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
+	bool sending = false;
 	while (true)
 	{
-		theDisconnectedLatch->wait();
-		LOG_INFO << "after theDisconnectedLatch->wait";
-		theDisconnectedLatch.reset(new base::CountDownLatch(connLimit));
-		base::MutexLockGuard lock(theLock);
-		current = 0;
-		clients[current]->connect();
+		int32_t num = connectedNum.get();
+		LOG_INFO << "num: " << num;
+		if (num == connLimit && !sending)
+		{
+			LOG_INFO << "sending";
+			sending = true;
+			for (int i = 0; i < connLimit; ++i)
+			{
+				clients[i]->send(url);
+			}
+		}
+		else if (num == 0 && sending)
+		{
+			LOG_INFO << "reconnecting";
+
+			{
+				base::MutexLockGuard lock(theLock);
+				current = 0;
+			}
+			sending = false;
+			clients[current]->connect();
+		}
+		else
+		{
+			usleep(1000000);
+		}
 	}
 }
 
@@ -183,14 +196,11 @@ int main(int argc, char* argv[])
 			connLimit = atoi(argv[3]);
 		}
 
-		theConnectedLatch.reset(new base::CountDownLatch(connLimit));
-		theDisconnectedLatch.reset(new base::CountDownLatch(connLimit));
+		//theConnectedLatch.reset(new base::CountDownLatch(connLimit));
+		//theDisconnectedLatch.reset(new base::CountDownLatch(connLimit));
 
-		base::Thread sendThread(boost::bind(sendThreadFun));
-		sendThread.start();
-
-		base::Thread reconnectThread(boost::bind(reconnectThreadFun));
-		reconnectThread.start();
+		//base::Thread reconnectThread(boost::bind(reconnectThreadFun));
+		//reconnectThread.start();
 
 		EventLoop loop;
 		InetAddress serverAddr(argv[1], static_cast<uint16_t>(atoi(argv[2])));
@@ -205,6 +215,10 @@ int main(int argc, char* argv[])
 
 		current = 0;
 		clients[current]->connect();
+
+		//base::Thread checkThread(boost::bind(checkThreadFun));
+		//checkThread.start();
+
 		loop.loop();
 	}
 	else

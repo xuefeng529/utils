@@ -157,7 +157,7 @@ bool StringUtil::equal(const std::string& str1, const std::string& str2, bool no
 void StringUtil::split(const std::string& src, const std::string& sep, std::vector<std::string>* ret)
 {
 	ret->clear();
-	if (src.empty())
+	if (src.empty() || src.find(sep) == std::string::npos)
 	{
 		return;
 	}

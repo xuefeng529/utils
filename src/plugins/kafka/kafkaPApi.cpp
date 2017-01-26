@@ -229,6 +229,7 @@ void ZooApi::process_kfk_strings(struct String_vector *strings,map<string,int>& 
                 char buf2[256];
                 int len2 = sizeof(buf2);
                 ret = zoo_get(zh,newpath.c_str(),0,buf2,&len2,NULL);
+				(void)ret;
 
                 string jsonstr(buf2, len2);
                 Json::Value root2;
