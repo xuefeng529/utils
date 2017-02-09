@@ -1,7 +1,5 @@
 #include "net/http/HttpServer.h"
 #include "net/http/HttpContext.h"
-#include "net/http/HttpRequest.h"
-#include "net/http/HttpResponse.h"
 #include "net/Buffer.h"
 #include "base/Logging.h"
 
@@ -12,21 +10,11 @@ namespace net
 namespace detail
 {
 
-void defaultHttpCallback(const net::TcpConnectionPtr& conn, const net::HttpRequest& request)
+void defaultHttpCallback(const HttpRequest& request, HttpResponse* response)
 {
-	const std::string& connection = request.getHeader("Connection");
-	bool close = connection == "close" ||
-		(request.getVersion() == net::HttpRequest::kHttp10 && connection != "Keep-Alive");
-	net::HttpResponse response(close);
-	response.setStatusCode(HttpResponse::k404NotFound);
-	response.setStatusMessage("Not Found");
-	net::BufferPtr buf(new net::Buffer());
-	response.appendToBuffer(buf.get());
-	conn->send(buf);
-	if (response.closeConnection())
-	{
-		conn->shutdown();
-	}
+	response->setStatusCode(HttpResponse::k404NotFound);
+	response->setStatusMessage("Not Found");
+	response->setCloseConnection(true);
 } 
 
 }// namespace detail
@@ -35,12 +23,12 @@ HttpServer::HttpServer(EventLoop* loop,
 					   const InetAddress& listenAddr,
 					   const std::string& name)
 	: server_(loop, listenAddr, name),
-	  httpCallback_(detail::defaultHttpCallback)
+	  requestCallback_(detail::defaultHttpCallback)
 {
 	server_.setConnectionCallback(
-		boost::bind(&HttpServer::onConnection, this, _1));
+		boost::bind(&HttpServer::handleConnection, this, _1));
 	server_.setMessageCallback(
-		boost::bind(&HttpServer::onMessage, this, _1, _2));
+		boost::bind(&HttpServer::handleMessage, this, _1, _2));
 }
 
 void HttpServer::start()
@@ -51,28 +39,42 @@ void HttpServer::start()
 	server_.start();
 }
 
-void HttpServer::onConnection(const TcpConnectionPtr& conn)
+void HttpServer::handleConnection(const TcpConnectionPtr& conn)
 {
 	if (conn->connected())
 	{
-		conn->setContext(HttpContext());
+		HttpContext context(conn, HttpContext::kRequest);
+		context.setRequestCallback(boost::bind(&HttpServer::handleRequest, this, _1, _2));
+		conn->setContext(context);
 	}
 }
 
-void HttpServer::onMessage(const TcpConnectionPtr& conn, Buffer* buf)
+void HttpServer::handleMessage(const TcpConnectionPtr& conn, Buffer* buffer)
 {
 	HttpContext* context = boost::any_cast<HttpContext>(conn->getMutableContext());
-
-	if (!context->parseRequest(buf))
+	if (!context->parse(buffer))
 	{
-		conn->send("HTTP/1.1 400 Bad Request\r\n\r\n");
-		conn->shutdown();
+		conn->close();
 	}
+}
 
-	if (context->gotAll())
+void HttpServer::handleRequest(const TcpConnectionPtr& conn, const HttpRequest& request)
+{
+	if (requestCallback_)
 	{
-		httpCallback_(conn, context->request());
-		context->reset();
+		const std::string& connection = request.getHeader("Connection");
+		bool close = connection == "close" ||
+			(request.version() == HttpRequest::kHttp10 && connection != "Keep-Alive");
+		HttpResponse response;
+		response.setCloseConnection(close);
+		requestCallback_(request, &response);
+		BufferPtr buffer(new Buffer());
+		response.appendToBuffer(buffer.get());
+		conn->send(buffer);
+		if (response.closeConnection())
+		{
+			conn->close();
+		}
 	}
 }
 

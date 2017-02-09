@@ -58,7 +58,7 @@ Inspector::Inspector(EventLoop* loop,
 	assert(base::CurrentThread::isMainThread());
 	assert(g_globalInspector == 0);
 	g_globalInspector = this;
-	server_.setHttpCallback(boost::bind(&Inspector::onRequest, this, _1, _2));
+	server_.setRequestCallback(boost::bind(&Inspector::onRequest, this, _1, _2));
 	processInspector_->registerCommands(this);
 	systemInspector_->registerCommands(this);
 #ifdef HAVE_TCMALLOC
@@ -100,10 +100,9 @@ void Inspector::start()
 	server_.start();
 }
 
-void Inspector::onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& req)
+void Inspector::onRequest(const net::HttpRequest& request, net::HttpResponse* response)
 {
-	net::HttpResponse resp(false);
-	if (req.path() == "/")
+	if (request.path() == "/")
 	{
 		std::string result;
 		base::MutexLockGuard lock(mutex_);
@@ -126,28 +125,28 @@ void Inspector::onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequ
 				result += "\n";
 			}
 		}
-		resp.setStatusCode(HttpResponse::k200Ok);
-		resp.setStatusMessage("OK");
-		resp.setContentType("text/plain");
-		resp.setBody(result);
+		response->setStatusCode(HttpResponse::k200Ok);
+		response->setStatusMessage("OK");
+		response->setContentType("text/plain");
+		response->setBody(result);
 	}
 	else
 	{
-		std::vector<std::string> result = split(req.path());
+		std::vector<std::string> result = split(request.path());
 		bool ok = false;
 		if (result.size() == 0)
 		{
-			LOG_DEBUG << req.path();
+			LOG_DEBUG << request.path();
 		}
 		else if (result.size() == 1)
 		{
 			std::string module = result[0];
 			if (module == "favicon.ico")
 			{
-				resp.setStatusCode(HttpResponse::k200Ok);
-				resp.setStatusMessage("OK");
-				resp.setContentType("image/png");
-				resp.setBody(std::string(favicon, sizeof favicon));
+				response->setStatusCode(HttpResponse::k200Ok);
+				response->setStatusMessage("OK");
+				response->setContentType("image/png");
+				response->setBody(std::string(favicon, sizeof favicon));
 
 				ok = true;
 			}
@@ -170,11 +169,11 @@ void Inspector::onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequ
 					ArgList args(result.begin() + 2, result.end());
 					if (it->second)
 					{
-						resp.setStatusCode(HttpResponse::k200Ok);
-						resp.setStatusMessage("OK");
-						resp.setContentType("text/plain");
+						response->setStatusCode(HttpResponse::k200Ok);
+						response->setStatusMessage("OK");
+						response->setContentType("text/plain");
 						const Callback& cb = it->second;
-						resp.setBody(cb(req.method(), args));
+						response->setBody(cb(request.method(), args));
 						ok = true;
 					}
 				}
@@ -183,14 +182,10 @@ void Inspector::onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequ
 
 		if (!ok)
 		{
-			resp.setStatusCode(HttpResponse::k404NotFound);
-			resp.setStatusMessage("Not Found");
+			response->setStatusCode(HttpResponse::k404NotFound);
+			response->setStatusMessage("Not Found");
 		}
 	}
-
-	BufferPtr buf(new Buffer());
-	resp.appendToBuffer(buf.get());
-	conn->send(buf);
 }
 
 char favicon[1743] =

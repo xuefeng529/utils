@@ -39,10 +39,9 @@ public:
 	EchoClient(EventLoop* loop,
 			   const InetAddress& listenAddr,
 		       const std::string& id,
-		       uint64_t connectingExpire, 
 		       uint64_t heartbeat)
 		: loop_(loop),
-		client_(loop, listenAddr, "EchoClient" + id, connectingExpire, heartbeat)
+		  client_(loop, listenAddr, "EchoClient" + id, heartbeat)
 	{
 		client_.setConnectionCallback(
 			boost::bind(&EchoClient::onConnection, this, _1));
@@ -50,8 +49,6 @@ public:
 			boost::bind(&EchoClient::onMessage, this, _1, _2));
 		client_.setWriteCompleteCallback(
 			boost::bind(&EchoClient::onWriteComplete, this, _1));
-		client_.setConnectingExpireCallback(
-			boost::bind(&EchoClient::onConnectingExpire, this));
 		client_.setHearbeatCallback(
 			boost::bind(&EchoClient::onHeartbeat, this, _1));
 		client_.enableRetry();
@@ -106,9 +103,10 @@ private:
 		
 		/*size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
 		*numBytes += buffer->length();*/
-		//std::string msg;
-		//buffer->retrieveAllAsString(&msg);
-		//conn->send(msg);
+		std::string msg;
+		buffer->retrieveAllAsString(&msg);
+		conn->send(msg);
+		client_.disconnect();
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
@@ -121,15 +119,9 @@ private:
 		//conn->send(g_text);
 	}
 
-	void onConnectingExpire()
-	{
-		LOG_INFO << "onConnectingExpire";
-		client_.connect();
-	}
-
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
 	{
-		//LOG_INFO << "onHeartbeat";
+		LOG_INFO << "onHeartbeat";
 		/*static int count = 0;
 		count++;
 		LOG_INFO << "count: " << count;*/
@@ -162,7 +154,7 @@ int main(int argc, char* argv[])
 		{
 			char buf[32];
 			snprintf(buf, sizeof buf, "%d", i + 1);
-			clients.push_back(new EchoClient(&loop, serverAddr, buf, 30, 0));
+			clients.push_back(new EchoClient(&loop, serverAddr, buf, 0));
 		}
 
 		clients[current].connect();

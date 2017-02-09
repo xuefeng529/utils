@@ -1,6 +1,5 @@
-#add_subdirectory(http)
-add_subdirectory(http2)
-#add_subdirectory(inspect)
+add_subdirectory(http)
+add_subdirectory(inspect)
 add_subdirectory(tests)
 
 aux_source_directory(. SRCS)

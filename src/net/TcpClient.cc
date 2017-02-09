@@ -12,15 +12,16 @@
 namespace net
 {
 
+const time_t TcpClient::kMaxRetryDelayS;
+const time_t TcpClient::kInitRetryDelayS;
+
 TcpClient::TcpClient(EventLoop* loop,
 					 const InetAddress& serverAddr,
 					 const std::string& name,
-					 time_t connectingExpire,
 					 time_t heartbeat)
 	: loop_(loop),
 	  connector_(new Connector(loop, serverAddr)),
 	  name_(name),
-	  connectingExpire_(connectingExpire < kMaxRetryDelayS ? kMaxRetryDelayS : connectingExpire),
 	  heartbeat_(heartbeat),
 	  connectionCallback_(defaultConnectionCallback),
 	  messageCallback_(defaultMessageCallback),
@@ -215,20 +216,12 @@ void TcpClient::newConnection(int sockfd)
 void TcpClient::connectingFailed()
 {
 	loop_->assertInLoopThread();
-	if (retryDelayS_ < connectingExpire_)
+	LOG_ERROR << "connect failed[" << name_ << "]";
+	if (connect_ && retry_)
 	{
-		LOG_INFO << "TcpClient::connectingFailed[" << name_ << "]: Reconnecting to "
-			<< connector_->serverAddress().toIpPort();
-		loop_->runAfter(retryDelayS_,
-			boost::bind(&Connector::restart, connector_));
-		retryDelayS_ *= 2;
-	}
-	else
-	{
-		if (connectingExpireCallback_)
-		{
-			connectingExpireCallback_();
-		}
+		LOG_INFO << "Reconnecting to " << connector_->serverAddress().toIpPort() << "[" << name_ << "]";
+		loop_->runAfter(retryDelayS_, boost::bind(&Connector::restart, connector_));
+		retryDelayS_ = std::min(retryDelayS_ * 2, kMaxRetryDelayS);
 	}
 }
 
@@ -246,8 +239,6 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn)
 	
 	if (connect_ && retry_)
 	{
-		LOG_DEBUG << "TcpClient::removeConnection[" << name_ << "]: Reconnecting to "
-			<< connector_->serverAddress().toIpPort();
 		connectingFailed();
 	}
 }

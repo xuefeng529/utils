@@ -41,7 +41,7 @@ private:
 	typedef std::map<std::string, std::string> HelpList;
 
 	void start();
-	void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& req);
+	void onRequest(const net::HttpRequest& request, net::HttpResponse* response);
 
 	HttpServer server_;
 	boost::scoped_ptr<ProcessInspector> processInspector_;

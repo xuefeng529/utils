@@ -12,32 +12,31 @@ class HttpResponse;
 class HttpServer : boost::noncopyable
 {
 public:
-	typedef boost::function<void(const TcpConnectionPtr&, const HttpRequest&)> HttpCallback;
+	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+	typedef boost::function<void(const HttpRequest&, HttpResponse*)> RequestCallback;
 
 	HttpServer(EventLoop* loop,
 			   const InetAddress& listenAddr,
 			   const std::string& name);
-
-	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
+	
 	void setThreadInitCallback(const ThreadInitCallback& cb)
 	{ threadInitCallback_ = cb; }
 
-	void setHttpCallback(const HttpCallback& cb)
-	{ httpCallback_ = cb; }
+	void setRequestCallback(const RequestCallback& cb)
+	{ requestCallback_ = cb; }
 
 	void setThreadNum(int numThreads)
-	{
-		server_.setThreadNum(numThreads);
-	}
+	{ server_.setThreadNum(numThreads); }
 
 	void start();
 
 private:
-	void onConnection(const TcpConnectionPtr& conn);
-	void onMessage(const TcpConnectionPtr& conn, Buffer* buf);
+	void handleConnection(const TcpConnectionPtr& conn);
+	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
+	void handleRequest(const TcpConnectionPtr& conn, const HttpRequest& request);
 
 	TcpServer server_;
-	HttpCallback httpCallback_;
+	RequestCallback requestCallback_;
 	ThreadInitCallback threadInitCallback_;
 };
 

@@ -2,11 +2,11 @@
 #define NET_HTTP_HTTPCLIENT_H
 
 #include "net/TcpClient.h"
-#include "net/http2/HttpRequest.h"
 
 namespace net
 {
 
+class HttpRequest;
 class HttpResponse;
 
 class HttpClient : boost::noncopyable
@@ -15,10 +15,11 @@ public:
 	typedef boost::function<void(HttpRequest*)> SendRequestCallback;
 	typedef boost::function<void(const HttpResponse&)> ResponseCallback;
 
-	HttpClient(EventLoop* loop, 
-		       const InetAddress& serverAddr, 
-		       const std::string& name, 
-		       uint64_t connectingExpire);
+	HttpClient(EventLoop* loop,
+		       const std::string& host,
+			   uint16_t port = 80,
+			   bool retry = false,
+		       const std::string& name = std::string());
 
 	void setSendRequestCallback(const SendRequestCallback& cb)
 	{ sendRequestCallback_ = cb; }
@@ -27,14 +28,14 @@ public:
 	{ responseCallback_ = cb; }
 
 	void connect()
-	{ client_.connect(); }
+	{ client_->connect(); }
 
 private:
 	void handleConnection(const TcpConnectionPtr& conn);
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 	void handleResponse(const TcpConnectionPtr& conn, const HttpResponse& response);
 
-	TcpClient client_;
+	boost::scoped_ptr<TcpClient> client_;
 	SendRequestCallback sendRequestCallback_;
 	ResponseCallback responseCallback_;
 };

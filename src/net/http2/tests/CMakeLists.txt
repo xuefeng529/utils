@@ -1,5 +1,0 @@
-add_executable(HttpClient_test HttpClient_test.cc)
-target_link_libraries(HttpClient_test http2)
-
-add_executable(HttpServer_test HttpServer_test.cc)
-target_link_libraries(HttpServer_test http2)

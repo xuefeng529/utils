@@ -12,7 +12,7 @@ class Buffer;
 class HttpResponse
 {
 public:
-	enum HttpStatusCode
+	enum StatusCode
 	{
 		kUnknown,
 		k200Ok = 200,
@@ -21,54 +21,46 @@ public:
 		k404NotFound = 404,
 	};
 
-	explicit HttpResponse(bool close)
-		: statusCode_(kUnknown),
-		  closeConnection_(close)
-	{
-	}
+	HttpResponse();
 
-	void setStatusCode(HttpStatusCode code)
-	{
-		statusCode_ = code;
-	}
+	void setStatusCode(StatusCode code)
+	{ statusCode_ = code; }
+
+	StatusCode statusCode() const
+	{ return statusCode_; }
 
 	void setStatusMessage(const std::string& message)
-	{
-		statusMessage_ = message;
-	}
+	{ statusMessage_ = message; }
 
-	void setCloseConnection(bool on)
-	{
-		closeConnection_ = on;
-	}
+	const std::string& statusMessage() const
+	{ return statusMessage_; }
 
-	bool closeConnection() const
-	{
-		return closeConnection_;
-	}
+	void setCloseConnection(bool on);
+
+	bool closeConnection() const;
 
 	void setContentType(const std::string& contentType)
-	{
-		addHeader("Content-Type", contentType);
-	}
+	{ addHeader("Content-Type", contentType); }
 
 	void addHeader(const std::string& key, const std::string& value)
-	{
-		headers_[key] = value;
-	}
+	{ headers_[key] = value; }
+
+	std::string getHeader(const std::string& field) const;
 
 	void setBody(const std::string& body)
-	{
-		body_ = body;
-	}
+	{ body_ = body; }
 
-	void appendToBuffer(Buffer* output) const;
+	const std::string& body() const
+	{ return body_; }
+
+	void swap(HttpResponse* that);
+
+	bool appendToBuffer(Buffer* output) const;
 
 private:
-	std::map<std::string, std::string> headers_;
-	HttpStatusCode statusCode_;
+	StatusCode statusCode_;
 	std::string statusMessage_;
-	bool closeConnection_;
+	std::map<std::string, std::string> headers_;
 	std::string body_;
 };
 

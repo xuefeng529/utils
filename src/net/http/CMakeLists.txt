@@ -7,6 +7,7 @@ target_link_libraries(http net)
 set(HEADERS
   HttpRequest.h
   HttpResponse.h
+  HttpClient.h
   HttpServer.h
   )
 install(FILES ${HEADERS} DESTINATION include/net/http)

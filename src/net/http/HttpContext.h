@@ -1,7 +1,13 @@
 #ifndef NET_HTTP_HTTPCONTEXT_H
 #define NET_HTTP_HTTPCONTEXT_H
 
+#include "net/http/http_parser.h"
+#include "net/TcpConnection.h"
 #include "net/http/HttpRequest.h"
+#include "net/http/HttpResponse.h"
+
+#include <boost/function.hpp>
+#include <string>
 
 namespace net
 {
@@ -11,48 +17,46 @@ class Buffer;
 class HttpContext
 {
 public:
-	enum HttpRequestParseState
-	{
-		kExpectRequestLine,
-		kExpectHeaders,
-		kExpectBody,
-		kGotAll,
-	};
+	typedef boost::function<void(const TcpConnectionPtr&, const HttpRequest&)> RequestCallback;
+	typedef boost::function<void(const TcpConnectionPtr&, const HttpResponse&)> ResponseCallback;
 
-	HttpContext()
-		: state_(kExpectRequestLine)
-	{
-	}
+	enum ParserType { kRequest, kResponse };
 
-	bool parseRequest(Buffer* buf);
+	typedef boost::weak_ptr<TcpConnection> TcpConnectionWeakPtr;
+	HttpContext(TcpConnectionWeakPtr weakConn, ParserType parserType);
 
-	bool gotAll() const
-	{
-		return state_ == kGotAll;
-	}
+	HttpContext(const HttpContext& other);
+	HttpContext& operator=(const HttpContext& other);
 
-	void reset()
-	{
-		state_ = kExpectRequestLine;
-		HttpRequest dummy;
-		request_.swap(dummy);
-	}
+	void setRequestCallback(const RequestCallback& cb)
+	{ requestCallback_ = cb; }
 
-	const HttpRequest& request() const
-	{
-		return request_;
-	}
+	void setResponseCallback(const ResponseCallback& cb)
+	{ responseCallback_ = cb; }
 
-	HttpRequest& request()
-	{
-		return request_;
-	}
-
+	bool parse(Buffer* buffer);
+    
 private:
-	bool processRequestLine(const char* begin, const char* end);
+	static int handleMessageBegin(http_parser* parser);
+	static int handleUrl(http_parser* parser, const char *at, size_t length);
+	static int handleStatus(http_parser* parser, const char *at, size_t length);
+	static int handleHeaderField(http_parser* parser, const char *at, size_t length);
+	static int handleHeaderValue(http_parser* parser, const char *at, size_t length);
+	static int handleHeadersComplete(http_parser* parser);
+	static int handleBody(http_parser* parser, const char *at, size_t length);
+	static int handleMessageComplete(http_parser* parser);
 
-	HttpRequestParseState state_;
+	TcpConnectionWeakPtr weakConn_;
+	std::string buffer_;
+	size_t offset_;
+	ParserType parserType_;
+    http_parser parser_;
+    http_parser_settings settings_;
 	HttpRequest request_;
+	HttpResponse response_;
+	std::string lastHeaderField_;
+	RequestCallback requestCallback_;
+	ResponseCallback responseCallback_;
 };
 
 } // namespace net

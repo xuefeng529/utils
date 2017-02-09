@@ -14,83 +14,72 @@
 extern char favicon[555];
 base::AtomicInt32 requestNum;
 
-void onRequest(const net::TcpConnectionPtr& conn, const net::HttpRequest& request)
+void onRequest(const net::HttpRequest& request, net::HttpResponse* response)
 {
-	LOG_INFO << requestNum.incrementAndGet();
-	/*LOG_INFO << "Headers " << request.methodString() << " " << request.path();
-	if (!benchmark)
+	std::string query;
+	if (!request.query().empty())
 	{
+		query = std::string("?") + request.query();
+	}
+	LOG_INFO << request.methodString() << " " << request.path() << query
+		<< " " << request.versionString();
 	const std::map<std::string, std::string>& headers = request.headers();
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin();
-	it != headers.end();
-	++it)
+		it != headers.end();
+		++it)
 	{
-	LOG_INFO << it->first << ": " << it->second;
+		LOG_INFO << it->first << ": " << it->second;
 	}
-	}
-	*/
-	const std::string& connection = request.getHeader("Connection");
-	bool close = connection == "close" ||
-		(request.getVersion() == net::HttpRequest::kHttp10 && connection != "Keep-Alive");
-	net::HttpResponse response(close);
+
 	if (request.path() == "/")
 	{
-		response.setStatusCode(net::HttpResponse::k200Ok);
-		response.setStatusMessage("OK");
-		response.setContentType("text/html");
-		response.addHeader("Server", "EastMoney");
+		response->setStatusCode(net::HttpResponse::k200Ok);
+		response->setStatusMessage("OK");
+		response->setContentType("text/html");
+		response->addHeader("Server", "EastMoney");
 		std::string now = base::Timestamp::now().toFormattedString();
-		response.setBody("<html><head><title>This is title</title></head>"
+		response->setBody("<html><head><title>This is title</title></head>"
 			"<body><h1>Hello</h1>Now is " + now +
 			"</body></html>");
 	}
 	else if (request.path() == "/favicon.ico")
 	{
-		response.setStatusCode(net::HttpResponse::k200Ok);
-		response.setStatusMessage("OK");
-		response.setContentType("image/png");
-		response.setBody(std::string(favicon, sizeof favicon));
+		response->setStatusCode(net::HttpResponse::k200Ok);
+		response->setStatusMessage("OK");
+		response->setContentType("image/png");
+		response->setBody(std::string(favicon, sizeof favicon));
 	}
 	else if (request.path() == "/hello")
 	{
-		response.setStatusCode(net::HttpResponse::k200Ok);
-		response.setStatusMessage("OK");
-		response.setContentType("text/plain");
-		response.addHeader("Server", "EastMoney");
-		response.setBody("hello too!\n");
+		response->setStatusCode(net::HttpResponse::k200Ok);
+		response->setStatusMessage("OK");
+		response->setContentType("text/plain");
+		response->addHeader("Server", "EastMoney");
+		response->setBody("hello too!\n");
 	}
-	else if (request.path() == "/UserInfoSet")
+	else if (request.path() == "/find" && request.query() == "a=1&b=2")
 	{
-		response.setStatusCode(net::HttpResponse::k200Ok);
-		response.setStatusMessage("OK");
-		response.setContentType("text/plain");
-		response.addHeader("Server", "EastMoney");
-		response.setBody("return UserInfoSet!\n");
+		response->setStatusCode(net::HttpResponse::k200Ok);
+		response->setStatusMessage("OK");
+		response->setContentType("text/plain");
+		response->setBody("c=3, d=4!");
 	}
 	else
 	{
-		response.setStatusCode(net::HttpResponse::k404NotFound);
-		response.setStatusMessage("Not Found");
-		response.setCloseConnection(true);
-	}
-
-	net::BufferPtr buf(new net::Buffer());
-	response.appendToBuffer(buf.get());
-	conn->send(buf);
-	if (response.closeConnection())
-	{
-		conn->close();
+		response->setStatusCode(net::HttpResponse::k404NotFound);
+		response->setStatusMessage("Not Found");
+		response->setCloseConnection(true);
 	}
 }
 
 int main(int argc, char* argv[])
 {
-	base::Logger::setLogLevel(base::Logger::INFO);
+	base::Logger::setLogLevel(base::Logger::DEBUG);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	int numThreads = static_cast<int>(base::ProcessInfo::getCpuCoresCount() * 2);
 	net::EventLoop loop;
 	net::HttpServer server(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
-	server.setHttpCallback(onRequest);
+	server.setRequestCallback(onRequest);
 	server.setThreadNum(numThreads);
 	server.start();
 	loop.loop();

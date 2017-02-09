@@ -105,7 +105,6 @@ private:
 		sendBuffer->removeBuffer(buffer);
 		assert(buffer->length() == 0);
 		conn->send(sendBuffer);
-		conn->close();
 		/*if (*numBytes == 4096)
 		{
 		conn->close();

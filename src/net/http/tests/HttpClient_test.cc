@@ -3,8 +3,9 @@
 #include "net/InetAddress.h"
 #include "net/Buffer.h"
 
-#include "net/http2/HttpClient.h"
-#include "net/http2/HttpResponse.h"
+#include "net/http/HttpClient.h"
+#include "net/http/HttpRequest.h"
+#include "net/http/HttpResponse.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -16,48 +17,41 @@
 #include <stdio.h>
 #include <unistd.h>
 
+net::EventLoop* g_loop;
+
 void sendRequest(net::HttpRequest* request)
 {
+	static int cnt = 0;
 	request->setMethod(net::HttpRequest::kGet);
-	request->setPath("/UserCfgGet.aspx");
-	request->setQuery("?a=u01181519");
+	request->setPath("/find");
+	request->setQuery("a=1&b=2");
+	if (cnt < 3)
+	{
+		request->setCloseConnection(false);
+	}
+	cnt++;
 }
 
 void handleResponse(const net::HttpResponse& response)
 {
 	LOG_INFO << response.statusCode() << " " << response.statusMessage();
-	LOG_INFO << response.body();
+	LOG_INFO << "body:" << response.body();
 }
 
 int main(int argc, char* argv[])
 {
-	base::Logger::setLogLevel(base::Logger::INFO);
+	base::Logger::setLogLevel(base::Logger::DEBUG);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	if (argc > 2)
 	{
 		net::EventLoop loop;
-		net::InetAddress serverAddr(argv[1], static_cast<uint16_t>(atoi(argv[2])));
-
-		net::HttpClient httpClient(&loop, serverAddr, "HttpClient_test", 60);
+		g_loop = &loop;
+		net::HttpClient httpClient(&loop, argv[1], static_cast<uint16_t>(atoi(argv[2])));
 		httpClient.setSendRequestCallback(boost::bind(sendRequest, _1));
 		httpClient.setResponseCallback(boost::bind(handleResponse, _1));
 		httpClient.connect();
-
-		/*clients.reserve(connLimit);
-		for (int i = 0; i < connLimit; ++i)
-		{
-		char buf[32];
-		snprintf(buf, sizeof buf, "%d", i + 1);
-		clients.push_back(new net::HttpRequest(&loop, serverAddr, buf, 60, 0));
-		}
-
-		current = 0;
-		clients[current]->connect();*/
-
-		//base::Thread checkThread(boost::bind(checkThreadFun));
-		//checkThread.start();
-
 		loop.loop();
+		LOG_INFO << "loop done.";
 	}
 	else
 	{

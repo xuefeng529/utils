@@ -1,106 +1,224 @@
-#include "net/Buffer.h"
 #include "net/http/HttpContext.h"
+#include "net/Buffer.h"
+#include "base/StringUtil.h"
+#include "base/Logging.h"
 
-#include <algorithm>
+#include <vector>
 
 namespace net
 {
 
-bool HttpContext::processRequestLine(const char* begin, const char* end)
+HttpContext::HttpContext(TcpConnectionWeakPtr weakConn, ParserType parserType)
+	: weakConn_(weakConn),
+	  offset_(0),
+	  parserType_(parserType)
 {
-	bool succeed = false;
-	const char* start = begin;
-	const char* space = std::find(start, end, ' ');
-	if (space != end && request_.setMethod(start, space))
-	{
-		start = space + 1;
-		space = std::find(start, end, ' ');
-		if (space != end)
-		{
-			const char* question = std::find(start, space, '?');
-			if (question != space)
-			{
-				request_.setPath(start, question);
-				request_.setQuery(question, space);
-			}
-			else
-			{
-				request_.setPath(start, space);
-			}
-			start = space + 1;
-			succeed = end - start == 8 && std::equal(start, end - 1, "HTTP/1.");
-			if (succeed)
-			{
-				if (*(end - 1) == '1')
-				{
-					request_.setVersion(HttpRequest::kHttp11);
-				}
-				else if (*(end - 1) == '0')
-				{
-					request_.setVersion(HttpRequest::kHttp10);
-				}
-				else
-				{
-					succeed = false;
-				}
-			}
-		}
-	}
-	return succeed;
+	http_parser_init(&parser_, static_cast<http_parser_type>(parserType_));
+	parser_.data = this;
+	http_parser_settings_init(&settings_);
+	settings_.on_message_begin = handleMessageBegin;
+	settings_.on_url = handleUrl;
+	settings_.on_status = handleStatus;
+	settings_.on_header_field = handleHeaderField;
+	settings_.on_header_value = handleHeaderValue;
+	settings_.on_headers_complete = handleHeadersComplete;
+	settings_.on_body = handleBody;
+	settings_.on_message_complete = handleMessageComplete;
 }
 
-bool HttpContext::parseRequest(Buffer* buf)
+HttpContext::HttpContext(const HttpContext& other)
+	: weakConn_(other.weakConn_),
+	  buffer_(other.buffer_),
+	  offset_(other.offset_),
+	  parserType_(other.parserType_),
+	  parser_(other.parser_),
+	  settings_(other.settings_),
+	  request_(other.request_),
+	  response_(other.response_),
+	  lastHeaderField_(other.lastHeaderField_),
+	  requestCallback_(other.requestCallback_),
+	  responseCallback_(other.responseCallback_)
 {
-	bool ok = true;
-	bool hasMore = true;
-	std::string line;
-	while (hasMore)
+	parser_.data = this;
+}
+
+HttpContext& HttpContext::operator=(const HttpContext& other)
+{
+	if (&other == this)
 	{
-		if (state_ == kExpectRequestLine)
+		return *this;
+	}
+
+	weakConn_ = other.weakConn_;
+	buffer_ = other.buffer_;
+	offset_ = other.offset_;
+	parserType_ = other.parserType_;
+	parser_ = other.parser_;
+	parser_.data = this;
+	settings_ = other.settings_;
+	request_ = other.request_;
+	response_ = other.response_;
+	lastHeaderField_ = other.lastHeaderField_;
+	requestCallback_ = other.requestCallback_;
+	responseCallback_ = other.responseCallback_;
+	return *this;
+}
+
+bool HttpContext::parse(Buffer* buffer)
+{
+	std::string input;
+	buffer->retrieveAllAsString(&input);
+	buffer_.append(input);
+	const char* begin = buffer_.data() + offset_;
+	size_t len = buffer_.size() - offset_;
+	size_t numParsed = http_parser_execute(&parser_, &settings_, begin, len);
+	if (numParsed != len)
+	{
+		LOG_ERROR << buffer_ << ":" << http_errno_name(static_cast<http_errno>(parser_.http_errno))
+			<< " " << http_errno_description(static_cast<http_errno>(parser_.http_errno));
+		return false;
+	}
+
+	if (offset_ != 0)
+	{
+		offset_ += numParsed;
+	}
+
+	return true;
+}
+
+int HttpContext::handleMessageBegin(http_parser* parser)
+{
+	LOG_DEBUG << "message begin";
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	if (httpContext->parserType_ == kRequest)
+	{
+		HttpRequest tmp;
+		httpContext->request_.swap(&tmp);
+	}
+	else
+	{
+		HttpResponse tmp;
+		httpContext->response_.swap(&tmp);
+	}
+
+	return 0;
+}
+
+int HttpContext::handleUrl(http_parser* parser, const char *at, size_t length)
+{
+	std::string url(at, length);
+	LOG_DEBUG << "url: " << url;
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	assert(httpContext->parserType_ == kRequest);
+	httpContext->request_.setMethod(static_cast<HttpRequest::Method>(parser->method));
+	httpContext->request_.parseUrl(url);
+	return 0;
+}
+
+int HttpContext::handleStatus(http_parser* parser, const char *at, size_t length)
+{
+	std::string status(at, length);
+	LOG_DEBUG << "status: " << status;
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	assert(httpContext->parserType_ == kResponse);
+	httpContext->response_.setStatusCode(static_cast<HttpResponse::StatusCode>(parser->status_code));
+	httpContext->response_.setStatusMessage(status);
+	return 0;
+}
+
+int HttpContext::handleHeaderField(http_parser* parser, const char *at, size_t length)
+{
+	std::string field(at, length);
+	LOG_DEBUG << "header field: " << field;
+	static_cast<HttpContext*>(parser->data)->lastHeaderField_ = field;
+	return 0;
+}
+
+int HttpContext::handleHeaderValue(http_parser* parser, const char *at, size_t length)
+{
+	std::string value(at, length);
+	LOG_DEBUG << "header value: " << value;
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	if (httpContext->parserType_ == kRequest)
+	{
+		httpContext->request_.addHeader(httpContext->lastHeaderField_, value);
+	}
+	else
+	{
+		httpContext->response_.addHeader(httpContext->lastHeaderField_, value);
+	}
+
+    return 0;
+}
+
+int HttpContext::handleHeadersComplete(http_parser* parser)
+{
+	LOG_DEBUG << "headers complete: " << parser->nread;
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	if (httpContext->parserType_ == kRequest)
+	{
+		if (parser->http_major == 1 && parser->http_minor == 0)
 		{
-			if (buf->readLine(&line))
-			{
-				ok = processRequestLine(line.data(), line.data() + line.length());
-				if (ok)
-				{
-					state_ = kExpectHeaders;
-				}
-				else
-				{
-					hasMore = false;
-				}
-			}
-			else
-			{
-				hasMore = false;
-			}
+			LOG_DEBUG << "kHttp10";
+			httpContext->request_.setVersion(HttpRequest::kHttp10);
 		}
-		else if (state_ == kExpectHeaders)
+		else if (parser->http_major == 1 && parser->http_minor == 1)
 		{
-			if (buf->readLine(&line))
-			{
-				const char* colon = std::find(line.data(), line.data() + line.length(), ':');
-				if (colon != line.data() + line.length())
-				{
-					request_.addHeader(line.data(), colon, line.data() + line.length());
-				}
-				else
-				{
-					state_ = kGotAll;
-					hasMore = false;
-				}
-			}
-			else
-			{
-				hasMore = false;
-			}
+			LOG_DEBUG << "kHttp11";
+			httpContext->request_.setVersion(HttpRequest::kHttp11);
 		}
-		else if (state_ == kExpectBody)
+		else
 		{
-			// FIXME:
+			LOG_DEBUG << "kUnknown";
+			httpContext->request_.setVersion(HttpRequest::kUnknown);
 		}
 	}
-	return ok;
+
+    return 0;
+}
+
+int HttpContext::handleBody(http_parser* parser, const char *at, size_t length)
+{
+	std::string body(at, length);
+	LOG_DEBUG << "body: " << body;
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	if (httpContext->parserType_ == kRequest)
+	{
+		httpContext->request_.setBody(body);
+	}
+	else
+	{
+		httpContext->response_.setBody(body);
+	}
+
+    return 0;
+}
+
+int HttpContext::handleMessageComplete(http_parser* parser)
+{
+	LOG_DEBUG << "message complete";
+	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
+	httpContext->buffer_.clear();
+	httpContext->offset_ = 0;
+	if (httpContext->parserType_ == kRequest)
+	{
+		TcpConnectionPtr conn = httpContext->weakConn_.lock();
+		if (conn)
+		{
+			httpContext->requestCallback_(conn, httpContext->request_);
+		}
+	}
+	else
+	{
+		TcpConnectionPtr conn = httpContext->weakConn_.lock();
+		if (conn)
+		{
+			httpContext->responseCallback_(conn, httpContext->response_);
+		}
+	}
+
+    return 0;
 }
 
 } // namespace net

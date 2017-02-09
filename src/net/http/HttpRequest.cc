@@ -1,10 +1,10 @@
-#include "net/http2/http_parser.h"
-#include "net/http2/HttpRequest.h"
+#include "net/http/HttpRequest.h"
+#include "net/http/http_parser.h"
 #include "net/Buffer.h"
 #include "base/Logging.h"
 #include "base/StringUtil.h"
 
-#include <vector>
+#include <stdio.h>
 
 namespace net
 {
@@ -13,21 +13,7 @@ HttpRequest::HttpRequest()
 	: method_(kInvalid),
 	  version_(kHttp11)
 {
-}
-
-HttpRequest::HttpRequest(Method method, const std::string& url, Version version)
-	: method_(method),
-	  version_(version)
-{
-	parseUrl(url);
-}
-
-HttpRequest::HttpRequest(Method method, const std::string& path, const std::string& query, Version version)
-	: method_(method),
-	  path_(path),
-	  query_(query),
-	  version_(version)
-{
+	setCloseConnection(true);
 }
 
 const char* HttpRequest::methodString() const
@@ -71,6 +57,20 @@ const char* HttpRequest::versionString() const
 		break;
 	}
 	return result;
+}
+
+void HttpRequest::setCloseConnection(bool on)
+{
+	const char* value = (on ? "close" : "Keep-Alive");
+	addHeader("Connection", value);
+}
+
+bool HttpRequest::closeConnection() const
+{
+	std::map<std::string, std::string>::const_iterator it =
+		headers_.find("Connection");
+	assert(it != headers_.end());
+	return (it->second == "close");
 }
 
 std::string HttpRequest::getHeader(const std::string& field) const
