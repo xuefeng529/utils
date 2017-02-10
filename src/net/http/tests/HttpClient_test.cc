@@ -25,7 +25,7 @@ void sendRequest(net::HttpRequest* request)
 	request->setMethod(net::HttpRequest::kGet);
 	request->setPath("/find");
 	request->setQuery("a=1&b=2");
-	if (cnt < 3)
+	if (cnt < 1)
 	{
 		request->setCloseConnection(false);
 	}

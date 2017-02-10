@@ -36,6 +36,7 @@ private:
 	void handleResponse(const TcpConnectionPtr& conn, const HttpResponse& response);
 
 	boost::scoped_ptr<TcpClient> client_;
+	std::string host_;
 	SendRequestCallback sendRequestCallback_;
 	ResponseCallback responseCallback_;
 };

@@ -68,20 +68,18 @@ bool HttpContext::parse(Buffer* buffer)
 {
 	std::string input;
 	buffer->retrieveAllAsString(&input);
+	size_t len = input.size();
 	buffer_.append(input);
 	const char* begin = buffer_.data() + offset_;
-	size_t len = buffer_.size() - offset_;
+	offset_ += len;
 	size_t numParsed = http_parser_execute(&parser_, &settings_, begin, len);
 	if (numParsed != len)
 	{
 		LOG_ERROR << buffer_ << ":" << http_errno_name(static_cast<http_errno>(parser_.http_errno))
 			<< " " << http_errno_description(static_cast<http_errno>(parser_.http_errno));
+		buffer_.clear();
+		offset_ = 0;
 		return false;
-	}
-
-	if (offset_ != 0)
-	{
-		offset_ += numParsed;
 	}
 
 	return true;

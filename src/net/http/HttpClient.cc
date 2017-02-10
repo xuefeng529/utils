@@ -19,6 +19,7 @@ HttpClient::HttpClient(EventLoop* loop,
 		LOG_FATAL << host;
 	}
 
+	host_ = serverAddr.toIpPort();
 	client_.reset(new TcpClient(loop, serverAddr, name));
 	client_->setConnectionCallback(
 		boost::bind(&HttpClient::handleConnection, this, _1));
@@ -38,6 +39,7 @@ void HttpClient::handleConnection(const TcpConnectionPtr& conn)
 		context.setResponseCallback(boost::bind(&HttpClient::handleResponse, this, _1, _2));
 		conn->setContext(context);
 		HttpRequest request;
+		request.addHeader("Host", host_);
 		sendRequestCallback_(&request);
 		BufferPtr buffer(new Buffer());
 		request.appendToBuffer(buffer.get());
@@ -62,6 +64,7 @@ void HttpClient::handleResponse(const TcpConnectionPtr& conn, const HttpResponse
 		if (!response.closeConnection() && sendRequestCallback_)
 		{
 			HttpRequest request;
+			request.addHeader("Host", host_);
 			sendRequestCallback_(&request);
 			BufferPtr buffer(new Buffer());
 			request.appendToBuffer(buffer.get());

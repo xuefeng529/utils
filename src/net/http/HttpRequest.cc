@@ -147,20 +147,6 @@ void HttpRequest::parseUrl(const std::string& url)
 		return;
 	}
 
-	std::string host;
-	if (u.field_set & (1 << UF_HOST))
-	{
-		host = url.substr(u.field_data[UF_HOST].off, u.field_data[UF_HOST].len);
-	}
-
-	uint16_t port = 80;
-	if (u.field_set & (1 << UF_PORT))
-	{
-		port = u.port;
-	}
-
-	headers_["Host"] = host + ":" + base::StringUtil::uint32ToStr(port);
-
 	if (u.field_set & (1 << UF_PATH))
 	{
 		path_ = url.substr(u.field_data[UF_PATH].off, u.field_data[UF_PATH].len);
@@ -170,6 +156,9 @@ void HttpRequest::parseUrl(const std::string& url)
 	{
 		query_ = url.substr(u.field_data[UF_QUERY].off, u.field_data[UF_QUERY].len);
 	}
+
+	LOG_DEBUG << "path: " << path_;
+	LOG_DEBUG << "query: " << query_;
 }
 
 } // namespace net
