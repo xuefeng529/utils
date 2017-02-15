@@ -158,13 +158,13 @@ int main(int argc, char* argv[])
 
 	char name[256];
 	strncpy(name, argv[0], 256);
-	base::AsyncLogging log(::basename(name), kRollSize);
-	log.start();
-	g_asyncLog = &log;
+	//base::AsyncLogging log(::basename(name), kRollSize);
+	//log.start();
+	//g_asyncLog = &log;
 	//base::TimeZone shanghai("/usr/share/zoneinfo/Asia/Shanghai");
 	//base::Logger::setTimeZone(shanghai);
 	base::Logger::setLogLevel(base::Logger::INFO);
-	base::Logger::setOutput(asyncOutput);
+	//base::Logger::setOutput(asyncOutput);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 
 	//threads.setMaxQueueSize(10000);

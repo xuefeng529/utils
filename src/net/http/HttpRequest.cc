@@ -69,8 +69,7 @@ bool HttpRequest::closeConnection() const
 {
 	std::map<std::string, std::string>::const_iterator it =
 		headers_.find("Connection");
-	assert(it != headers_.end());
-	return (it->second == "close");
+	return (it == headers_.end() || it->second == "close");
 }
 
 std::string HttpRequest::getHeader(const std::string& field) const

@@ -63,6 +63,7 @@ void HttpServer::handleRequest(const TcpConnectionPtr& conn, const HttpRequest& 
 	if (requestCallback_)
 	{
 		HttpResponse response;
+		response.setCloseConnection(request.closeConnection());
 		requestCallback_(request, &response);
 		BufferPtr buffer(new Buffer());
 		response.appendToBuffer(buffer.get());
