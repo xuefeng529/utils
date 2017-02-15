@@ -17,18 +17,38 @@
 #include <stdio.h>
 #include <unistd.h>
 
-net::EventLoop* g_loop;
+std::string g_host;
 
 void sendRequest(net::HttpRequest* request)
 {
 	static int cnt = 0;
-	request->setMethod(net::HttpRequest::kGet);
-	request->setPath("/find");
-	request->setQuery("a=1&b=2");
-	if (cnt < 1)
+	switch (cnt)
 	{
+	case 0:
+	{
+		request->setMethod(net::HttpRequest::kGet);
+		request->setPath("/find");
+		request->setQuery("a=1&b=2");
 		request->setCloseConnection(false);
+		break;
 	}
+	case 1:
+	{
+		request->setMethod(net::HttpRequest::kGet);
+		request->parseUrl("/find?a=1&b=2");
+		request->setCloseConnection(false);
+		break;
+	}
+	case 2:
+	{
+		request->setMethod(net::HttpRequest::kGet);
+		char url[128];
+		snprintf(url, sizeof(url), "http://%s/find?a=1&b=2", g_host.c_str());
+		request->parseUrl(url);
+		break;
+	}
+	}
+
 	cnt++;
 }
 
@@ -44,8 +64,10 @@ int main(int argc, char* argv[])
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	if (argc > 2)
 	{
+		net::InetAddress addr(static_cast<uint16_t>(atoi(argv[2])));
+		net::InetAddress::resolve(argv[1], &addr);
+		g_host = addr.toIpPort();
 		net::EventLoop loop;
-		g_loop = &loop;
 		net::HttpClient httpClient(&loop, argv[1], static_cast<uint16_t>(atoi(argv[2])));
 		httpClient.setSendRequestCallback(boost::bind(sendRequest, _1));
 		httpClient.setResponseCallback(boost::bind(handleResponse, _1));

@@ -16,3 +16,9 @@ target_link_libraries(EventLoopThread_test net)
 
 add_executable(TimerQueue_test TimerQueue_test.cc)
 target_link_libraries(TimerQueue_test net)
+
+add_executable(CodecServer_test CodecServer_test.cc)
+target_link_libraries(CodecServer_test net)
+
+add_executable(CodecClient_test CodecClient_test.cc)
+target_link_libraries(CodecClient_test net)

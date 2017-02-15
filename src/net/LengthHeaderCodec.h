@@ -21,6 +21,7 @@ public:
 
 private:
 	const static size_t kHeaderLen = sizeof(int32_t);
+	const static size_t kMessageMaxLen = 4 * 1024 - kHeaderLen;
 
 	MessageCallback messageCallback_;
 };

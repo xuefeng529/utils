@@ -62,11 +62,7 @@ void HttpServer::handleRequest(const TcpConnectionPtr& conn, const HttpRequest& 
 {
 	if (requestCallback_)
 	{
-		const std::string& connection = request.getHeader("Connection");
-		bool close = connection == "close" ||
-			(request.version() == HttpRequest::kHttp10 && connection != "Keep-Alive");
 		HttpResponse response;
-		response.setCloseConnection(close);
 		requestCallback_(request, &response);
 		BufferPtr buffer(new Buffer());
 		response.appendToBuffer(buffer.get());

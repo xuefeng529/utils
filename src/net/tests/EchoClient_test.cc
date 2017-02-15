@@ -18,7 +18,7 @@
 using namespace base;
 using namespace net;
 
-char g_text[4096];
+char g_text[2*4096];
 
 class EchoClient;
 boost::ptr_vector<EchoClient> clients;
@@ -51,7 +51,7 @@ public:
 			boost::bind(&EchoClient::onWriteComplete, this, _1));
 		client_.setHearbeatCallback(
 			boost::bind(&EchoClient::onHeartbeat, this, _1));
-		client_.enableRetry();
+		//client_.enableRetry();
 	}
 
 	void connect()

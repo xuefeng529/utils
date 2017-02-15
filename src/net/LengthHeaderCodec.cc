@@ -16,10 +16,10 @@ void LengthHeaderCodec::onMessage(const TcpConnectionPtr& conn, Buffer* buffer)
 	while (buffer->length() >= kHeaderLen)
 	{
 		const int32_t len = buffer->peekInt32();
-		if (len > 65536 || len < 0)
+		if (len > static_cast<int32_t>(kMessageMaxLen) || len < 0)
 		{
 			LOG_ERROR << "Invalid length " << len;
-			conn->shutdown();
+			conn->close();
 			break;
 		}
 		else if (buffer->length() >= len + kHeaderLen)
