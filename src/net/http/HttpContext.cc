@@ -107,10 +107,13 @@ int HttpContext::handleUrl(http_parser* parser, const char *at, size_t length)
 {
 	std::string url(at, length);
 	LOG_DEBUG << "url: " << url;
+	std::string originalUrl;
+	base::StringUtil::unescape(url, &originalUrl);
+	LOG_DEBUG << "original url: " << originalUrl;
 	HttpContext* httpContext = static_cast<HttpContext*>(parser->data);
 	assert(httpContext->parserType_ == kRequest);
 	httpContext->request_.setMethod(static_cast<HttpRequest::Method>(parser->method));
-	httpContext->request_.parseUrl(url);
+	httpContext->request_.parseUrl(originalUrl);
 	return 0;
 }
 

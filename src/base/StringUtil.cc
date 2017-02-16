@@ -458,4 +458,75 @@ std::string StringUtil::extractFilename(const std::string& filepath)
 	return filename;
 }
 
+namespace{
+
+const char HEX2DEC[256] =
+{
+	/*       0  1  2  3   4  5  6  7   8  9  A  B   C  D  E  F */
+	/* 0 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 1 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 2 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 3 */  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1,
+
+	/* 4 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 5 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 6 */ -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 7 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+
+	/* 8 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* 9 */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* A */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* B */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+
+	/* C */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* D */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* E */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	/* F */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
+}
+
+void StringUtil::unescape(const std::string& str, std::string* ret)
+{
+	//for a esacep character, is %xx, min size is 3
+	ret->clear();
+	if (str.size() <= 2)
+	{
+		ret->append(str);
+		return;
+	}
+
+	// Note from RFC1630:  "Sequences which start with a percent sign
+	// but are not followed by two hexadecimal characters (0-9, A-F) are reserved
+	// for future extension"
+
+	ret->resize(str.size(), '\0');
+
+	size_t i = 0;
+	size_t j = 0;
+	while (i < str.size() - 2)
+	{
+		if (str[i] == '%')
+		{
+			char dec1 = HEX2DEC[static_cast<int>(str[i + 1])];
+			char dec2 = HEX2DEC[static_cast<int>(str[i + 2])];
+			if (dec1 != -1 && dec2 != -1)
+			{
+				(*ret)[j++] = (dec1 << 4) + dec2;
+				i += 3;
+				continue;
+			}
+		}
+
+		(*ret)[j++] = str[i++];
+	}
+
+	while (i < str.size())
+	{
+		(*ret)[j++] = str[i++];
+	}
+
+	(*ret).resize(j);
+}
+
 } // namespace base
