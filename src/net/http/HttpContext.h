@@ -46,15 +46,28 @@ private:
 	static int handleBody(http_parser* parser, const char *at, size_t length);
 	static int handleMessageComplete(http_parser* parser);
 
+	enum ParserStatus
+	{
+		kUnknow = -1,
+		kMessageBegin,
+		kUrl,
+		kStatus,
+		kHeaderField,
+		kHeaderValue,
+		kHeadersComplete,
+		kBody,
+		kMessageComplete
+	};
+
 	TcpConnectionWeakPtr weakConn_;
-	std::string buffer_;
-	size_t offset_;
+	ParserStatus parserStatus_;
 	ParserType parserType_;
     http_parser parser_;
     http_parser_settings settings_;
 	HttpRequest request_;
 	HttpResponse response_;
 	std::string lastHeaderField_;
+	size_t bodyRemain_;
 	RequestCallback requestCallback_;
 	ResponseCallback responseCallback_;
 };

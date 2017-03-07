@@ -41,9 +41,20 @@ void test()
 void testLine()
 {
 	net::Buffer bufffer;
-	bufffer.append(url);
+	bufffer.append("header complete\r\n\r\n");
 	std::string line;
 	bool f;
+	int i = 0;
+	while ((f = bufffer.readLine(&line)))
+	{
+		fprintf(stdout, "%d: %s\n", i++, line.c_str());
+		if (line.empty())
+		{
+			fprintf(stdout, "line empty\n");
+		}
+	}
+
+	bufffer.append(url);
 	while ((f = bufffer.readLine(&line)))
 	{
 		fprintf(stdout, "%s\n", line.c_str());
@@ -156,12 +167,12 @@ void testMemLeak()
 int main()
 {
 	//test();
-	//testLine();
+	testLine();
 	//testRemove();
 	//testAdd();
-	base::Thread thread(boost::bind(sendThread));
-	thread.start();
-	testMemLeak();
-	thread.join();
+	//base::Thread thread(boost::bind(sendThread));
+	//thread.start();
+	//testMemLeak();
+	//thread.join();
 	return 0;
 }

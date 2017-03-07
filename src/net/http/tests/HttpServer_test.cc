@@ -31,6 +31,11 @@ void onRequest(const net::HttpRequest& request, net::HttpResponse* response)
 		LOG_INFO << it->first << ": " << it->second;
 	}
 
+	if (!request.body().empty())
+	{
+		LOG_INFO << request.body();
+	}
+
 	if (request.path() == "/")
 	{
 		response->setStatusCode(net::HttpResponse::k200Ok);

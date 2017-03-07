@@ -69,6 +69,9 @@ public:
 	void setBody(const std::string& body)
 	{ body_ = body; }
 
+	void appendBody(const std::string& body)
+	{ body_.append(body); }
+
 	const std::string& body() const
 	{ return body_; }
 

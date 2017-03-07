@@ -3,3 +3,6 @@ target_link_libraries(HttpClient_test http)
 
 add_executable(HttpServer_test HttpServer_test.cc)
 target_link_libraries(HttpServer_test http)
+
+add_executable(http_parser_test http_parser_test.cc)
+target_link_libraries(http_parser_test http)
