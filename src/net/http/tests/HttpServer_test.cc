@@ -67,7 +67,7 @@ void onRequest(const net::HttpRequest& request, net::HttpResponse* response)
 		response->setStatusCode(net::HttpResponse::k200Ok);
 		response->setStatusMessage("OK");
 		response->setContentType("text/plain");
-		response->setBody("c=3, d=4!");
+		response->setBody("c=3,\nd=4!");
 	}
 	else
 	{

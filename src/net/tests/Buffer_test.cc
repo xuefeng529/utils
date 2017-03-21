@@ -41,9 +41,22 @@ void test()
 void testLine()
 {
 	net::Buffer bufffer;
-	bufffer.append("header complete\r\n\r\n");
+	bufffer.append("no ctrl");
 	std::string line;
-	bool f;
+	bool f = bufffer.readLine(&line);
+	if (f)
+	{
+		printf("read line: %s\n", line.c_str());
+	}
+	else
+	{
+		std::string val;
+		bufffer.retrieveAllAsString(&val);
+		printf("read as string: %s\n", val.c_str());
+	}
+	
+	/*bufffer.append("header complete\r\n\r\n");
+	
 	int i = 0;
 	while ((f = bufffer.readLine(&line)))
 	{
@@ -58,7 +71,7 @@ void testLine()
 	while ((f = bufffer.readLine(&line)))
 	{
 		fprintf(stdout, "%s\n", line.c_str());
-	}
+	}*/
 }
 
 void testRemove()

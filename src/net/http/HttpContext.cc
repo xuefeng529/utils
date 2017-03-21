@@ -70,10 +70,11 @@ HttpContext& HttpContext::operator=(const HttpContext& other)
 
 bool HttpContext::parse(Buffer* buffer)
 {
-	if (parserStatus_ != kHeadersComplete || parserStatus_ != kBody)
+	while (buffer->length() > 0)
 	{
+		size_t sumParsed = 0;
 		std::string line;
-		while (buffer->readLine(&line))
+		while (parserStatus_ != kHeadersComplete && parserStatus_ != kBody && buffer->readLine(&line))
 		{
 			line += kCRLF;
 			size_t lineLen = line.size();
@@ -86,27 +87,36 @@ bool HttpContext::parse(Buffer* buffer)
 				bodyRemain_ = 0;
 				return false;
 			}
-		}
-	}
 
-	if ((parserStatus_ == kHeadersComplete || parserStatus_ == kBody) && bodyRemain_ > 0)
-	{
+			sumParsed += numParsed;
+		}
+
 		size_t bufLen = buffer->length();
-		size_t bodyLen = bodyRemain_ <= bufLen ? bodyRemain_ : bufLen;
-		std::string body;
-		buffer->retrieveAsString(bodyLen, &body);
-		bodyRemain_ -= bodyLen;
-		size_t numParsed = http_parser_execute(&parser_, &settings_, body.data(), bodyLen);
-		if (numParsed != bodyLen)
+		if ((parserStatus_ == kHeadersComplete || parserStatus_ == kBody) && bodyRemain_ > 0 && bufLen > 0)
 		{
-			LOG_ERROR << body << "[" << http_errno_name(static_cast<http_errno>(parser_.http_errno))
-				<< ":" << http_errno_description(static_cast<http_errno>(parser_.http_errno)) << "]";
-			parserStatus_ = kUnknow;
-			bodyRemain_ = 0;
-			return false;
+			size_t bodyLen = bodyRemain_ <= bufLen ? bodyRemain_ : bufLen;
+			std::string body;
+			buffer->retrieveAsString(bodyLen, &body);
+			bodyRemain_ -= bodyLen;
+			size_t numParsed = http_parser_execute(&parser_, &settings_, body.data(), bodyLen);
+			if (numParsed != bodyLen)
+			{
+				LOG_ERROR << body << "[" << http_errno_name(static_cast<http_errno>(parser_.http_errno))
+					<< ":" << http_errno_description(static_cast<http_errno>(parser_.http_errno)) << "]";
+				parserStatus_ = kUnknow;
+				bodyRemain_ = 0;
+				return false;
+			}
+
+			sumParsed += numParsed;
+		}
+
+		if (sumParsed == 0)
+		{
+			break;
 		}
 	}
-
+	
 	return true;
 }
 

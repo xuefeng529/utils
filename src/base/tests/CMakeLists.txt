@@ -36,3 +36,6 @@ target_link_libraries(daemon_test base)
 
 add_executable(AsyncLogging_test AsyncLogging_test.cc)
 target_link_libraries(AsyncLogging_test base)
+
+add_executable(base_Buffer_test Buffer_test.cc)
+target_link_libraries(base_Buffer_test base)

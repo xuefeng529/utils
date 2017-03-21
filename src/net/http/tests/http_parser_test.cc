@@ -376,12 +376,12 @@ void test3()
 }
 
 const char* url =
-"GET /find?a=1&b=2 HTTP/1.0\r\n"
+"PUT /find?a=1&b=2 HTTP/1.0\r\n"
 "Host: 127.1.0.1:80\r\n"
 "Connection: Keep-Alive\r\n"
-//"Content-Length: 10\r\n"
-"Content-Type: text/plain\r\n\r\n";
-//"body1body2";
+"Content-Length: 12\r\n"
+"Content-Type: text/plain\r\n\r\n"
+"body1\r\nbody2";
 
 size_t kOnce = 3;
 net::TcpConnectionPtr g_conn;
@@ -431,7 +431,7 @@ private:
 	{
 		std::string msg;
 		buffer->retrieveAllAsString(&msg);
-		client_.disconnect();
+		//client_.disconnect();
 		LOG_INFO << msg;
 	}
 
@@ -469,6 +469,7 @@ int main(int argc, char* argv[])
 	LOG_INFO << url;
 	if (argc > 2)
 	{
+		LOG_INFO << "length: " << std::string("body1\r\nbody2").size();
 		net::EventLoop loop;
 
 		net::EventLoopThread otherThread;
@@ -491,6 +492,11 @@ int main(int argc, char* argv[])
 			remain_ -= len;
 			usleep(10000);
 		} while (remain_ > 0);
+
+		for (int i = 0; i < 5; i++)
+		{
+			g_conn->send(url);
+		}
 
 		loop.loop();
 	}
