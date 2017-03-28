@@ -484,15 +484,69 @@ const char HEX2DEC[256] =
 	/* F */ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
+// Only alphanum is safe.
+const char SAFE[256] =
+{
+	/*      0 1 2 3  4 5 6 7  8 9 A B  C D E F */
+	/* 0 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 1 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 2 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 3 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+
+	/* 4 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	/* 5 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+	/* 6 */ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	/* 7 */ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+
+	/* 8 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* 9 */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* A */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* B */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+	/* C */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* D */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* E */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	/* F */ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
 }
 
-void StringUtil::unescape(const std::string& str, std::string* ret)
+void StringUtil::escape(const std::string& src, std::string* ret)
+{
+	ret->clear();
+	if (src.empty())
+	{
+		return;
+	}
+
+	const char DEC2HEX[] = "0123456789ABCDEF";
+	ret->resize(src.size() * 3, '\0');
+	size_t i = 0;
+	size_t j = 0;
+	for (; i < src.size(); ++i)
+	{
+		if (SAFE[static_cast<int>(src[i])])
+		{
+			(*ret)[j++] = src[i];
+		}
+		else
+		{
+			(*ret)[j++] = '%';
+			(*ret)[j++] = DEC2HEX[src[i] >> 4];
+			(*ret)[j++] = DEC2HEX[src[i] & 0x0F];
+		}
+	}
+
+	ret->resize(j);
+}
+
+void StringUtil::unescape(const std::string& src, std::string* ret)
 {
 	//for a esacep character, is %xx, min size is 3
 	ret->clear();
-	if (str.size() <= 2)
+	if (src.size() <= 2)
 	{
-		ret->append(str);
+		ret->append(src);
 		return;
 	}
 
@@ -500,16 +554,16 @@ void StringUtil::unescape(const std::string& str, std::string* ret)
 	// but are not followed by two hexadecimal characters (0-9, A-F) are reserved
 	// for future extension"
 
-	ret->resize(str.size(), '\0');
+	ret->resize(src.size(), '\0');
 
 	size_t i = 0;
 	size_t j = 0;
-	while (i < str.size() - 2)
+	while (i < src.size() - 2)
 	{
-		if (str[i] == '%')
+		if (src[i] == '%')
 		{
-			char dec1 = HEX2DEC[static_cast<int>(str[i + 1])];
-			char dec2 = HEX2DEC[static_cast<int>(str[i + 2])];
+			char dec1 = HEX2DEC[static_cast<int>(src[i + 1])];
+			char dec2 = HEX2DEC[static_cast<int>(src[i + 2])];
 			if (dec1 != -1 && dec2 != -1)
 			{
 				(*ret)[j++] = (dec1 << 4) + dec2;
@@ -518,15 +572,15 @@ void StringUtil::unescape(const std::string& str, std::string* ret)
 			}
 		}
 
-		(*ret)[j++] = str[i++];
+		(*ret)[j++] = src[i++];
 	}
 
-	while (i < str.size())
+	while (i < src.size())
 	{
-		(*ret)[j++] = str[i++];
+		(*ret)[j++] = src[i++];
 	}
 
-	(*ret).resize(j);
+	ret->resize(j);
 }
 
 } // namespace base

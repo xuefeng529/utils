@@ -21,7 +21,7 @@ std::string g_host;
 
 void sendRequest(net::HttpRequest* request)
 {
-	static int cnt = 2;
+	static int cnt = 0;
 	switch (cnt)
 	{
 	case 0:
@@ -50,7 +50,7 @@ void sendRequest(net::HttpRequest* request)
 	}
 	}
 
-	//cnt++;
+	cnt++;
 }
 
 void handleResponse(const net::HttpResponse& response)

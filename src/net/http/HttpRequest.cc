@@ -154,6 +154,9 @@ void HttpRequest::parseUrl(const std::string& url)
 	if (u.field_set & (1 << UF_QUERY))
 	{
 		query_ = url.substr(u.field_data[UF_QUERY].off, u.field_data[UF_QUERY].len);
+		std::string original;
+		base::StringUtil::unescape(query_, &original);
+		query_ = original;
 	}
 
 	LOG_DEBUG << "path: " << path_;

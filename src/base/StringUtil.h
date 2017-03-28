@@ -87,7 +87,8 @@ uint64_t strToUInt64(const std::string& str);
 float strToFloat(const std::string& str);
 double strToDouble(const std::string& str);
 
-void unescape(const std::string& str, std::string* ret);
+void escape(const std::string& src, std::string* ret);
+void unescape(const std::string& src, std::string* ret);
 
 std::string extractDirname(const std::string& filepath);
 std::string extractFilename(const std::string& filepath);
