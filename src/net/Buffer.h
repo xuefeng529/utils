@@ -58,6 +58,7 @@ public:
 	int32_t peekInt32() const;
 	int16_t peekInt16() const;
 	int8_t peekInt8() const;
+	void peekAsBytes(char* buf, size_t len) const;
 	
 	/// Peek from OriginalEndian
 	int64_t peekInt64WithOriginalEndian() const;

@@ -230,6 +230,12 @@ int8_t Buffer::peekInt8() const
 	return be8;
 }
 
+void Buffer::peekAsBytes(char* buf, size_t len) const
+{
+	assert(len <= length());
+	evbuffer_copyout(buffer_, buf, len);
+}
+
 void Buffer::peekAllAsString(std::string* ret) const
 {
 	return peekAsString(length(), ret);
