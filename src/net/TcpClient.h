@@ -62,7 +62,7 @@ public:
 	bool isConnected()
 	{
 		base::MutexLockGuard lock(mutex_);
-		return !connection_;
+		return static_cast<bool>(connection_);
 	}
 
 private:
