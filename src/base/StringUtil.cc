@@ -525,15 +525,15 @@ void StringUtil::escape(const std::string& src, std::string* ret)
 	size_t j = 0;
 	for (; i < src.size(); ++i)
 	{
-		if (SAFE[static_cast<int>(src[i])])
+		if (SAFE[static_cast<uint8_t>(src[i])])
 		{
 			(*ret)[j++] = src[i];
 		}
 		else
 		{
 			(*ret)[j++] = '%';
-			(*ret)[j++] = DEC2HEX[src[i] >> 4];
-			(*ret)[j++] = DEC2HEX[src[i] & 0x0F];
+			(*ret)[j++] = DEC2HEX[static_cast<uint8_t>(src[i]) >> 4];
+			(*ret)[j++] = DEC2HEX[static_cast<uint8_t>(src[i]) & 0x0F];
 		}
 	}
 
@@ -562,8 +562,8 @@ void StringUtil::unescape(const std::string& src, std::string* ret)
 	{
 		if (src[i] == '%')
 		{
-			char dec1 = HEX2DEC[static_cast<int>(src[i + 1])];
-			char dec2 = HEX2DEC[static_cast<int>(src[i + 2])];
+			char dec1 = HEX2DEC[static_cast<uint8_t>(src[i + 1])];
+			char dec2 = HEX2DEC[static_cast<uint8_t>(src[i + 2])];
 			if (dec1 != -1 && dec2 != -1)
 			{
 				(*ret)[j++] = (dec1 << 4) + dec2;
