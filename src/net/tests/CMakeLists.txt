@@ -12,7 +12,7 @@ add_executable(EchoClient_test EchoClient_test.cc)
 target_link_libraries(EchoClient_test net)
 
 add_executable(EventLoopThread_test EventLoopThread_test.cc)
-target_link_libraries(EventLoopThread_test net)
+target_link_libraries(EventLoopThread_test net base)
 
 add_executable(TimerQueue_test TimerQueue_test.cc)
 target_link_libraries(TimerQueue_test net)
@@ -22,3 +22,6 @@ target_link_libraries(CodecServer_test net)
 
 add_executable(CodecClient_test CodecClient_test.cc)
 target_link_libraries(CodecClient_test net)
+
+add_executable(TcpClient_test TcpClient_test.cc)
+target_link_libraries(TcpClient_test net base)

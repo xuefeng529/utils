@@ -12,9 +12,9 @@ namespace Regex
 
 bool isMatch(const std::string& str, const std::string& re, bool ignoreCase = false)
 {
-	boost::xpressive::cregex reg = 
-		(ignoreCase ? boost::xpressive::cregex::compile(re, boost::xpressive::icase)
-		: boost::xpressive::cregex::compile(re));
+	boost::xpressive::sregex reg = 
+		(ignoreCase ? boost::xpressive::sregex::compile(re, boost::xpressive::icase)
+		: boost::xpressive::sregex::compile(re));
 	return boost::xpressive::regex_match(str, reg);
 }
 

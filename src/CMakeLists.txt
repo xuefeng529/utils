@@ -28,6 +28,7 @@ set(CXX_FLAGS
  # -MMD
  # -std=c++0x
  -rdynamic
+ #-DTHREADED
  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
@@ -39,21 +40,31 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 find_package(Boost REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(/usr/local/mysql/include)
-include_directories(/usr/local/include/zookeeper/)
-include_directories(/usr/local/include/librdkafka/rdkafka)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/libevent/include)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include/mysql)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include/mysql/psi)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/curl/include)
+#include_directories(/usr/local/mysql/include)
+#include_directories(/usr/local/include/zookeeper/)
+#include_directories(/usr/local/include/librdkafka/rdkafka)
 #include_directories(${PROJECT_SOURCE_DIR}/http-lite)
 #include_directories(${PROJECT_SOURCE_DIR}/consistent-hash)
 
-link_directories(/usr/local/ssdb/api/cpp)
-link_directories(/usr/local/mysql/lib)
+#link_directories(/usr/local/ssdb/api/cpp)
+#link_directories(/usr/local/mysql/lib)
+link_directories(${PROJECT_SOURCE_DIR}/../deps/libevent/lib)
+link_directories(${PROJECT_SOURCE_DIR}/../deps/ssdb/lib)
+link_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/lib)
+link_directories(${PROJECT_SOURCE_DIR}/../deps/curl/lib)
 
 add_subdirectory(base)
 add_subdirectory(net)
 add_subdirectory(plugins/openssl)
 add_subdirectory(plugins/json)
-add_subdirectory(plugins/kafka)
+#add_subdirectory(plugins/kafka)
 add_subdirectory(plugins/consistent_hash)
 add_subdirectory(plugins/ssdb_client)
 add_subdirectory(plugins/mysql_client)
+#add_subdirectory(plugins/zk)
 #add_subdirectory(examples)

@@ -6,6 +6,23 @@
 
 int main(int argc, char* argv[])
 {
+	std::string orig = "http://172.16.56.27:9696/UserCfgSet.aspx?a=u0321011&b=1,600002&c=2&d=2&e=2&f=&g=10&h=5&i=20130903&j=20130903&k=1&l=123";
+	std::string escaped;
+	base::StringUtil::escape(orig, &escaped);
+	printf("escape: %s\n", escaped.c_str());
+
+	std::string unescaped;
+	base::StringUtil::unescape(escaped, &unescaped);
+	printf("unescape: %s\n", unescaped.c_str());
+	if (orig == unescaped)
+	{
+		printf("it is ok\n");
+	}
+	else
+	{
+		printf("it is not ok\n");
+	}
+	return 0;
 	if (argc < 3)
 	{
 		fprintf(stdout, "Usage: %s content flag\n", argv[0]);
@@ -14,34 +31,22 @@ int main(int argc, char* argv[])
 
 	if (atoi(argv[2]) == 1)
 	{
-		std::string hexStr;
+		/*std::string hexStr;
 		base::StringUtil::byteToHex(argv[1], strlen(argv[1]), &hexStr);
-		fprintf(stdout, "To hex: %s\n", hexStr.c_str());
+		fprintf(stdout, "To hex: %s\n", hexStr.c_str());*/
+		std::string escaped;
+		base::StringUtil::escape("http://172.16.56.27:9696/UserCfgSet.aspx?a=u0321011&b=1,600002&c=2&d=2&e=2&f=&g=10&h=5&i=20130903&j=20130903&k=1&l=123", &escaped);
+		printf("escape: %s\n", escaped.c_str());
 	}
 	else
 	{
-		std::string byteStr;
+		/*std::string byteStr;
 		base::StringUtil::hexToByte(argv[1], &byteStr);
-		fprintf(stdout, "To byte: %s\n", byteStr.c_str());
+		fprintf(stdout, "To byte: %s\n", byteStr.c_str());*/
+		std::string unescaped;
+		base::StringUtil::unescape(argv[1], &unescaped);
+		printf("unescape: %s\n", unescaped.c_str());
 	}
 
 	return 0;
-	/*char byteBuf[] = { 0x9A, 0xBC };
-	std::string hexStr = base::StringUtil::byteToHexStr(byteBuf, sizeof(byteBuf));
-	fprintf(stdout, "%s\n", hexStr.c_str());
-	std::string byteStr = base::StringUtil::hexStrToByte(hexStr.c_str(), hexStr.size());
-	for (size_t i = 0; i < byteStr.size(); i++)
-	{
-		fprintf(stdout, "%02hhX", byteStr[i]);
-	}
-
-	fprintf(stdout, "\n");
-	return 0;
-	const char* values[] = { "111111", "222222", "333333", "444444", "555555", "666666" };
-	for (size_t i = 0; i < sizeof(values)/sizeof(char*); i++)
-	{
-		fprintf(stdout, "%s: %u\n", values[i], base::StringUtil::hashCode(values[i]));
-	}
-	
-	return 0;*/
 }

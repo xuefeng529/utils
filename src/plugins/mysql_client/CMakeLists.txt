@@ -2,7 +2,7 @@ add_subdirectory(tests)
 
 aux_source_directory(. SRCS)
 add_library(mysql_client STATIC ${SRCS})
-target_link_libraries(mysql_client base mysqlclient)
+target_link_libraries(mysql_client base mysqlclient.a dl)
 
 set(HEADERS
 Row.h

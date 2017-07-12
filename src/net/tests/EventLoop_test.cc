@@ -10,22 +10,24 @@
 using namespace base;
 using namespace net;
 
-void callback(int n)
+void afterCallback(const std::string& v)
 {
-  printf("id = %d\n", n);
+	printf("%s\n", v.c_str());
 }
 
-void threadFunc(EventLoop* loop)
+void runInLoopCallback(const std::string& v)
 {
-  printf("threadFunc(): pid = %d, tid = %d\n", getpid(), CurrentThread::tid());
-  int32_t num = 0;
-  while (num < 5)
-  {
-	  loop->runInLoop(boost::bind(callback, num++));
-	  sleep(1);
-  }
+	printf("%s\n", v.c_str());
+}
 
-  loop->quit();
+void everyCallback(EventLoop* loop)
+{
+  static int num = 0;
+  printf("every callback: %d\n", num++);
+  if (num >= 5)
+  {
+	  loop->quit();
+  }
 }
 
 int main()
@@ -36,9 +38,19 @@ int main()
   EventLoop loop;
   assert(EventLoop::getEventLoopOfCurrentThread() == &loop);
 
-  Thread thread(boost::bind(threadFunc, &loop));
-  thread.start();
+  printf("begin to runInLoop\n");
+  loop.runInLoop(boost::bind(runInLoopCallback, "run in loop"));
 
+  printf("begin to runAfter\n");
+  loop.runAfter(3, boost::bind(afterCallback, "after 3 seconds"));
+
+  printf("begin to runEvery\n");
+  loop.runEvery(3, boost::bind(everyCallback, &loop));
+
+  //Thread thread(boost::bind(threadFunc, &loop));
+  //thread.start();
+
+  printf("begin to loop\n");
   loop.loop();
 
   printf("exit loop\n");
