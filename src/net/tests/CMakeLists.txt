@@ -23,5 +23,14 @@ target_link_libraries(CodecServer_test net)
 add_executable(CodecClient_test CodecClient_test.cc)
 target_link_libraries(CodecClient_test net)
 
-add_executable(TcpClient_test TcpClient_test.cc)
-target_link_libraries(TcpClient_test net base)
+#add_executable(TcpClient_test TcpClient_test.cc)
+#target_link_libraries(TcpClient_test net base)
+
+#add_executable(ssl_server ssl_server.cc)
+#target_link_libraries(ssl_server ssl)
+
+#add_executable(ssl_client ssl_client.cc)
+#target_link_libraries(ssl_client ssl)
+
+add_executable(SSLEchoServer_test SSLEchoServer_test.cc)
+target_link_libraries(SSLEchoServer_test net base)

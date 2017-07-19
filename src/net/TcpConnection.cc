@@ -95,7 +95,8 @@ TcpConnection::TcpConnection(EventLoop* loop,
 	  readIdle_(readIdle),
 	  state_(kConnecting),
 	  closeType_(kUnknow),
-	  bev_(NULL)
+	  bev_(NULL),
+      ssl_(NULL)
 {
 	LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this
 		<< " fd=" << sockfd_;
@@ -108,6 +109,10 @@ TcpConnection::~TcpConnection()
 	assert(state_ == kDisconnected);
 	if (bev_ != NULL)
 	{
+        if (ssl_ != NULL)
+        {
+            ssl::close(ssl_);
+        }
 		bufferevent_free(bev_);
 	}
 }
@@ -140,14 +145,15 @@ void TcpConnection::disableAll()
 void TcpConnection::connectEstablished()
 {
 	loop_->assertInLoopThread();
-	bev_ = bufferevent_socket_new(loop_->eventBase(), sockfd_, BEV_OPT_CLOSE_ON_FREE);
-	if (bev_ == NULL)
-	{
-		LOG_ERROR << "bufferevent_socket_new of TcpConnection::connectEstablished[" << name_ << "]: "
-			<< base::strerror_tl(errno);
-		return;
-	}
-	
+    bev_ = bufferevent_socket_new(loop_->eventBase(), sockfd_, BEV_OPT_CLOSE_ON_FREE);
+    if (bev_ == NULL)
+    {
+        LOG_ERROR << "bufferevent_socket_new of TcpConnection::connectEstablished[" << name_ << "]: "
+            << base::strerror_tl(errno);
+        handleClose();
+        return;
+    }
+   
 	setState(kConnected);
 	bufferevent_setcb(bev_, handleRead, handleWrite, handleEvent, this);
 	if (readIdle_ > 0)
@@ -161,6 +167,44 @@ void TcpConnection::connectEstablished()
 	outputBuffer_.reset(new Buffer(bufferevent_get_output(bev_)));
 	enableReading();
 	connectionCallback_(shared_from_this());
+}
+
+void TcpConnection::connectEstablished(SSL* ssl, SSLState state)
+{
+    loop_->assertInLoopThread();
+    ssl_ = ssl;
+    if (state == kSSLAccepting)
+    {
+        bev_ = bufferevent_openssl_socket_new(loop_->eventBase(), sockfd_,
+            ssl_, BUFFEREVENT_SSL_ACCEPTING, BEV_OPT_CLOSE_ON_FREE);
+    }
+    else
+    {
+        bev_ = bufferevent_openssl_socket_new(loop_->eventBase(), sockfd_,
+            ssl_, BUFFEREVENT_SSL_CONNECTING, BEV_OPT_CLOSE_ON_FREE);
+    }
+    
+    if (bev_ == NULL)
+    {
+        LOG_ERROR << "bufferevent_openssl_socket_new of TcpConnection::connectEstablished[" << name_ << "]: "
+            << base::strerror_tl(errno);
+        handleClose();
+        return;
+    }
+
+    setState(kConnected);
+    bufferevent_setcb(bev_, handleRead, handleWrite, handleEvent, this);
+    if (readIdle_ > 0)
+    {
+        struct timeval tv;
+        bzero(&tv, sizeof(tv));
+        tv.tv_sec = readIdle_;
+        bufferevent_set_timeouts(bev_, &tv, NULL);
+    }
+    inputBuffer_.reset(new Buffer(bufferevent_get_input(bev_)));
+    outputBuffer_.reset(new Buffer(bufferevent_get_output(bev_)));
+    enableReading();
+    connectionCallback_(shared_from_this());
 }
 
 void TcpConnection::connectDestroyed()

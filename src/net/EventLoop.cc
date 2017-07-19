@@ -82,6 +82,8 @@ EventLoop::EventLoop()
 		LOG_FATAL << "event_base_new of EventLoop::EventLoop(): "
 			<< base::strerror_tl(errno);
 	}
+
+    LOG_INFO << "event method: " << event_base_get_method(base_);
 	
 	evutil_socket_t pair[2];
 	evutil_socketpair(AF_UNIX, SOCK_STREAM, 0, pair);

@@ -79,14 +79,24 @@ void onRequest(const net::HttpRequest& request, net::HttpResponse* response)
 
 int main(int argc, char* argv[])
 {
+    if (argc < 2)
+    {
+        LOG_FATAL << "Usage: " << argv[0] << " port [cacert cert key]";
+    }
+
 	base::Logger::setLogLevel(base::Logger::DEBUG);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	int numThreads = static_cast<int>(base::ProcessInfo::getCpuCoresCount() * 2);
 	net::EventLoop loop;
-	net::HttpServer server(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
-	server.setRequestCallback(onRequest);
-	server.setThreadNum(numThreads);
-	server.start();
+    net::HttpServer httpServer(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
+    httpServer.setRequestCallback(onRequest);
+    httpServer.setThreadNum(numThreads);
+    if (argc > 3)
+    {
+        httpServer.enableSSL(argv[2], argv[3], argv[4]);
+    }
+    
+    httpServer.start();
 	loop.loop();
 }
 

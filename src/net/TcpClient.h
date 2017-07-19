@@ -3,6 +3,7 @@
 
 #include "base/Mutex.h"
 #include "net/TcpConnection.h"
+#include "net/SSLUtil.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -23,6 +24,8 @@ public:
 			  time_t heartbeat = 0);
 
 	~TcpClient(); 
+
+    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
 
 	void connect();
 	void disconnect();
@@ -94,6 +97,7 @@ private:
 	TcpConnectionPtr connection_;
 	time_t retryDelayS_;
 	bool retry_;
+    SSL_CTX* sslCtx_;
 };
 
 } // namespace net

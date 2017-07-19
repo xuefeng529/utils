@@ -19,7 +19,7 @@ set(CXX_FLAGS
  #-Wconversion
  -Wno-deprecated
  -Wno-unused-parameter
- -Wold-style-cast
+ #-Wold-style-cast
  -Woverloaded-virtual
  -Wpointer-arith
  #-Wshadow
@@ -38,13 +38,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2 -finline-limit=1000 -DNDEBUG")
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-find_package(Boost REQUIRED)
+#find_package(Boost REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/../deps/libevent/include)
-include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include)
-include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include/mysql)
-include_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/include/mysql/psi)
-include_directories(${PROJECT_SOURCE_DIR}/../deps/curl/include)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/include)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/include/mysql)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/include/ssdb/mysql)
+include_directories(${PROJECT_SOURCE_DIR}/../deps/include/mysql/psi)
+
 #include_directories(/usr/local/mysql/include)
 #include_directories(/usr/local/include/zookeeper/)
 #include_directories(/usr/local/include/librdkafka/rdkafka)
@@ -53,10 +53,7 @@ include_directories(${PROJECT_SOURCE_DIR}/../deps/curl/include)
 
 #link_directories(/usr/local/ssdb/api/cpp)
 #link_directories(/usr/local/mysql/lib)
-link_directories(${PROJECT_SOURCE_DIR}/../deps/libevent/lib)
-link_directories(${PROJECT_SOURCE_DIR}/../deps/ssdb/lib)
-link_directories(${PROJECT_SOURCE_DIR}/../deps/mysql/lib)
-link_directories(${PROJECT_SOURCE_DIR}/../deps/curl/lib)
+link_directories(${PROJECT_SOURCE_DIR}/../deps/lib)
 
 add_subdirectory(base)
 add_subdirectory(net)

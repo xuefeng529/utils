@@ -2,43 +2,42 @@
 #define NET_HTTP_HTTPCLIENT_H
 
 #include "net/TcpClient.h"
+#include "net/http/HttpRequest.h"
+#include "net/http/HttpResponse.h"
+
+namespace base
+{
+class CountDownLatch;
+}
 
 namespace net
 {
 
-class HttpRequest;
-class HttpResponse;
+class EventLoop;
+class EventLoopThread;
 
 class HttpClient : boost::noncopyable
 {
 public:
-	typedef boost::function<void(HttpRequest*)> SendRequestCallback;
-	typedef boost::function<void(const HttpResponse&)> ResponseCallback;
-
-	HttpClient(EventLoop* loop,
-		       const std::string& host,
-			   uint16_t port = 80,
-			   bool retry = false,
-		       const std::string& name = std::string());
-
-	void setSendRequestCallback(const SendRequestCallback& cb)
-	{ sendRequestCallback_ = cb; }
-
-	void setResponseCallback(const ResponseCallback& cb)
-	{ responseCallback_ = cb; }
-
-	void connect()
-	{ client_->connect(); }
+	HttpClient();
+    ~HttpClient();
+    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
+    HttpResponse request(const std::string& url, HttpRequest::Method method = HttpRequest::kGet, bool keepalive = true);
 
 private:
-	void handleConnection(const TcpConnectionPtr& conn);
+    void handleConnection(const TcpConnectionPtr& conn, const HttpRequest& request);
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 	void handleResponse(const TcpConnectionPtr& conn, const HttpResponse& response);
-
+   
+    boost::scoped_ptr<EventLoopThread> loopThread_;
+    EventLoop* loop_;
 	boost::scoped_ptr<TcpClient> client_;
-	std::string host_;
-	SendRequestCallback sendRequestCallback_;
-	ResponseCallback responseCallback_;
+    boost::scoped_ptr<base::CountDownLatch> requestLatch_;
+    boost::scoped_ptr<HttpResponse> response_;
+    std::string lastHost_;
+    std::string cacertFile_;
+    std::string certFile_;
+    std::string keyFile_;
 };
 
 } // namespace net

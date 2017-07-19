@@ -4,6 +4,7 @@
 #include "base/Atomic.h"
 #include "base/Mutex.h"
 #include "net/TcpConnection.h"
+#include "net/SSLUtil.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -26,7 +27,10 @@ public:
 			  const InetAddress& listenAddr,
 			  const std::string& name,
 			  time_t readIdle = 0);
+
 	~TcpServer();
+
+    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
 
 	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
 	void setThreadInitCallback(const ThreadInitCallback& cb)
@@ -71,7 +75,7 @@ private:
 	ConnectionMap connections_;
 	base::AtomicInt32 started_;
 	ThreadInitCallback threadInitCallback_;
-
+    SSL_CTX* sslCtx_;
 	/*typedef boost::weak_ptr<TcpConnection> WeakTcpConnectionPtr;
 	struct Entry
 	{

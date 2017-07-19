@@ -25,7 +25,8 @@ TcpServer::TcpServer(EventLoop* loop,
 	  threadPool_(new EventLoopThreadPool(loop, name)),
 	  connectionCallback_(net::defaultConnectionCallback),
 	  messageCallback_(net::defaultMessageCallback),
-	  nextConnId_(1)
+	  nextConnId_(1),
+      sslCtx_(NULL)
 	  //connectionBuckets_(readTimeout)
 {
 	LOG_DEBUG << "TcpServer::ctor[" << name_ << "]";
@@ -51,6 +52,20 @@ TcpServer::~TcpServer()
 			boost::bind(&TcpConnection::connectDestroyed, conn));
 		conn.reset();
 	}
+
+    if (sslCtx_ != NULL)
+    {
+        ssl::release(sslCtx_);
+    }
+}
+
+void TcpServer::enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+{
+    sslCtx_ = ssl::init(cacertFile, certFile, keyFile);
+    if (sslCtx_ == NULL)
+    {
+        LOG_FATAL << "ssl::init: " << ssl::error();
+    }
 }
 
 void TcpServer::setThreadNum(int numThreads)
@@ -97,7 +112,17 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 	conn->setMessageCallback(boost::bind(&TcpServer::handleMessage, this, _1, _2));
 	conn->setWriteCompleteCallback(boost::bind(&TcpServer::handleWriteComplete, this, _1));
 	conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));
-	ioLoop->runInLoop(boost::bind(&TcpConnection::connectEstablished, conn));
+    SSL* ssl = NULL;
+    if (sslCtx_ != NULL)
+    {
+        ssl = ssl::open(sslCtx_);
+        ioLoop->runInLoop(boost::bind(&TcpConnection::connectEstablished, 
+            conn, ssl, TcpConnection::kSSLAccepting));
+    }
+    else
+    {
+        ioLoop->runInLoop(boost::bind(&TcpConnection::connectEstablished, conn));
+    }
 }
 
 void TcpServer::handleConnection(const net::TcpConnectionPtr& conn)

@@ -18,6 +18,8 @@ public:
 	HttpServer(EventLoop* loop,
 			   const InetAddress& listenAddr,
 			   const std::string& name);
+
+    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
 	
 	void setThreadInitCallback(const ThreadInitCallback& cb)
 	{ threadInitCallback_ = cb; }
@@ -35,7 +37,7 @@ private:
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 	void handleRequest(const TcpConnectionPtr& conn, const HttpRequest& request);
 
-	TcpServer server_;
+    TcpServer server_;
 	RequestCallback requestCallback_;
 	ThreadInitCallback threadInitCallback_;
 };

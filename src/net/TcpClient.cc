@@ -48,6 +48,19 @@ TcpClient::~TcpClient()
 {
 	LOG_DEBUG << "TcpClient::dtor[" << name_
 		<< "] - connector " << get_pointer(connector_);
+    if (sslCtx_ != NULL)
+    {
+        ssl::release(sslCtx_);
+    }
+}
+
+void TcpClient::enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+{
+    sslCtx_ = ssl::init(cacertFile, certFile, keyFile);
+    if (sslCtx_ == NULL)
+    {
+        LOG_FATAL << "ssl::init: " << ssl::error();
+    }
 }
 
 void TcpClient::connect()
@@ -204,13 +217,22 @@ void TcpClient::newConnection(int sockfd)
 	conn->setMessageCallback(messageCallback_);
 	conn->setWriteCompleteCallback(writeCompleteCallback_);
 	conn->setCloseCallback(boost::bind(&TcpClient::removeConnection, this, _1));
-
+    
 	{
 		base::MutexLockGuard lock(mutex_);
 		connection_ = conn;
 	}
 	
-	conn->connectEstablished();
+    SSL* ssl = NULL;
+    if (sslCtx_ != NULL)
+    {
+        ssl = ssl::open(sslCtx_);
+        conn->connectEstablished(ssl, TcpConnection::kSSLConnecting);
+    }
+    else
+    {
+        conn->connectEstablished();
+    }
 }
 
 void TcpClient::connectingFailed()

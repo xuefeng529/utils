@@ -4,7 +4,7 @@ add_subdirectory(tests)
 
 aux_source_directory(. SRCS)
 add_library(net STATIC ${SRCS})
-target_link_libraries(net base event.a event_pthreads.a)
+target_link_libraries(net base event.a event_openssl.a event_pthreads.a ssl)
 
 set(HEADERS
   config.h
@@ -20,6 +20,7 @@ set(HEADERS
   Timer.h
   TimerQueue.h
   LengthHeaderCodec.h
+  SSLUtil.h
   )
 install(FILES ${HEADERS} DESTINATION include/net)
 install(TARGETS net DESTINATION lib)

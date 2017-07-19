@@ -2,7 +2,7 @@ add_subdirectory(tests)
 
 aux_source_directory(. SRCS)
 add_library(http ${SRCS})
-target_link_libraries(http net)
+target_link_libraries(http net ssl)
 
 set(HEADERS
   HttpRequest.h

@@ -3,6 +3,7 @@
 
 #include "net/InetAddress.h"
 #include "net/Buffer.h"
+#include "net/SSLUtil.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -83,6 +84,8 @@ public:
 	void forceClose();
 	
 	void connectEstablished();
+    enum SSLState { kSSLAccepting, kSSLConnecting };
+    void connectEstablished(SSL* ssl, SSLState state);
 	void connectDestroyed();
 	EventLoop* getLoop() const { return loop_; }
 	const std::string& name() const { return name_; }
@@ -128,6 +131,7 @@ private:
 	CloseType closeType_;
 	boost::any context_;
 	struct bufferevent* bev_;
+    SSL* ssl_;
 };
 
 } // namespace net

@@ -31,6 +31,11 @@ HttpServer::HttpServer(EventLoop* loop,
 		boost::bind(&HttpServer::handleMessage, this, _1, _2));
 }
 
+void HttpServer::enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+{
+    server_.enableSSL(cacertFile, certFile, keyFile);
+}
+
 void HttpServer::start()
 {
 	LOG_WARN << "HttpServer[" << server_.name()
