@@ -1,17 +1,17 @@
 #include "net/SSLUtil.h"
+#include "net/config.h"
 #include "base/LogStream.h"
 #include "base/Logging.h"
-
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-#include <openssl/rand.h>
 
 namespace net
 {
 namespace ssl
 {
 
-SSL_CTX* init(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+SSL_CTX* init(const std::string& cacertFile,
+              const std::string& certFile,
+              const std::string& keyFile,
+              const std::string& passwd)
 {
     SSL_library_init();
     ERR_load_crypto_strings();
@@ -24,15 +24,15 @@ SSL_CTX* init(const std::string& cacertFile, const std::string& certFile, const 
             << " but running with " << base::Fmt("%lx", static_cast<unsigned long>(SSLeay()));
     }
 
-    SSL_CTX* ctx = SSL_CTX_new(SSLv23_method());
+    SSL_CTX* ctx = SSL_CTX_new(SSLv23_method()); 
     if (ctx == NULL)
     {
         LOG_ERROR << "SSL_CTX_new: " << error();
         return NULL;
     }
 
-    /// 加载CA的证书  
-    if (!SSL_CTX_load_verify_locations(ctx, cacertFile.c_str(), NULL))
+    /// 加载CA的证书
+    if (!cacertFile.empty() && !SSL_CTX_load_verify_locations(ctx, cacertFile.c_str(), NULL))
     {
         LOG_ERROR << "SSL_CTX_load_verify_locations: " << error();
         return NULL;
@@ -41,20 +41,49 @@ SSL_CTX* init(const std::string& cacertFile, const std::string& certFile, const 
     /// 加载自己的证书 
     if (!SSL_CTX_use_certificate_file(ctx, certFile.c_str(), SSL_FILETYPE_PEM))
     {
-
         LOG_ERROR << "SSL_CTX_use_certificate_file: " << error();
         return NULL;
     }
 
     /// 加载自己的私钥
-    if (!SSL_CTX_use_PrivateKey_file(ctx, keyFile.c_str(), SSL_FILETYPE_PEM))
+    if (!passwd.empty())
     {
+        BIO* key = BIO_new(BIO_s_file());
+        if (key == NULL)
+        {
+            LOG_ERROR << "BIO_new: " << error();
+            return NULL;
+        }
 
-        LOG_ERROR << "SSL_CTX_use_PrivateKey_file: " << error();
-        return NULL;
+        BIO_read_filename(key, keyFile.c_str());
+        EVP_PKEY* pkey = PEM_read_bio_PrivateKey(key, NULL, NULL, 
+            const_cast<void*>(reinterpret_cast<const void*>(passwd.data())));
+        if (pkey == NULL)
+        {
+            LOG_ERROR << "PEM_read_bio_PrivateKey: " << error();
+            BIO_free(key);
+            return NULL;
+        }
+
+        if (SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
+        {
+            LOG_ERROR << "SSL_CTX_use_PrivateKey: " << error();
+            BIO_free(key);
+            return NULL;
+        }
+
+        BIO_free(key);
+    }
+    else
+    {
+        if (!SSL_CTX_use_PrivateKey_file(ctx, keyFile.c_str(), SSL_FILETYPE_PEM))
+        {
+            LOG_ERROR << "SSL_CTX_use_PrivateKey_file: " << error();
+            return NULL;
+        }
     }
 
-    /// 验证私钥是否正确  
+    /// 验证私钥和证书是否匹配 
     if (!SSL_CTX_check_private_key(ctx))
     {
         LOG_ERROR << "SSL_CTX_check_private_key: " << error();
@@ -62,7 +91,11 @@ SSL_CTX* init(const std::string& cacertFile, const std::string& certFile, const 
     }
 
     /// 验证对方证书
-    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    if (!cacertFile.empty())
+    {
+        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
+    }
+    
     return ctx;
 }
 

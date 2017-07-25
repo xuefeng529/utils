@@ -72,9 +72,28 @@ int main(int argc, char* argv[])
     LOG_INFO << "please input url or q exit!";
     std::string line;
     net::HttpClient httpClient;
-    if (argc > 3)
+    if (argc == 5)
     {
-        httpClient.enableSSL(argv[2], argv[3], argv[4]);
+        if (strcmp(argv[2], "\"\"") == 0)
+        {
+            httpClient.enableSSL("", argv[3], argv[4], "");
+        }
+        else
+        {
+            httpClient.enableSSL(argv[2], argv[3], argv[4], "");
+        }     
+    }
+
+    if (argc == 6)
+    {
+        if (strcmp(argv[2], "\"\"") == 0)
+        {
+            httpClient.enableSSL("", argv[3], argv[4], argv[5]);
+        }
+        else
+        {
+            httpClient.enableSSL(argv[2], argv[3], argv[4], argv[5]);
+        }
     }
 
     while (std::getline(std::cin, line) && line != "q")

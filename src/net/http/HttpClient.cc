@@ -24,11 +24,15 @@ HttpClient::~HttpClient()
 {
 }
 
-void HttpClient::enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+void HttpClient::enableSSL(const std::string& cacertFile,
+                           const std::string& certFile,
+                           const std::string& keyFile,
+                           const std::string& passwd)
 {
     cacertFile_ = cacertFile;
     certFile_ = certFile;
     keyFile_ = keyFile;
+    passwd_ = passwd;
 }
 
 HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method method, bool keepalive)
@@ -104,7 +108,7 @@ HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method met
             boost::bind(&HttpClient::handleMessage, this, _1, _2));
         if (!cacertFile_.empty() && !keyFile_.empty() && !certFile_.empty())
         {
-            client_->enableSSL(cacertFile_, certFile_, keyFile_);
+            client_->enableSSL(cacertFile_, certFile_, keyFile_, passwd_);
         }
         client_->connect();
     }

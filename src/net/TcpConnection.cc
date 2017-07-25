@@ -35,9 +35,10 @@ void TcpConnection::handleWrite(struct bufferevent *bev, void *ctx)
 	TcpConnection* conn = static_cast<TcpConnection*>(ctx);
 	LOG_DEBUG << "TcpConnection::handleWrite[" << conn->name_ << "]";
 	assert(conn->outputBuffer_->length() == 0);
-	if (conn->writeCompleteCallback_)
+    if (conn->state_ == kConnected && conn->writeCompleteCallback_)
 	{
-		conn->writeCompleteCallback_(conn->shared_from_this());
+        conn->getLoop()->queueInLoop(
+            boost::bind(conn->writeCompleteCallback_, conn->shared_from_this()));    
 	}
 
 	if (conn->state_ == kDisconnecting)
@@ -46,8 +47,9 @@ void TcpConnection::handleWrite(struct bufferevent *bev, void *ctx)
 		{
 			if (::shutdown(bufferevent_getfd(conn->bev_), SHUT_WR) == -1)
 			{
-				LOG_SYSERR << "shutdown[" << conn->name_ << "]: "
+				LOG_ERROR << "shutdown[" << conn->name_ << "]: "
 					<< base::strerror_tl(errno);
+                conn->handleClose();
 			}
 		}
 		else
@@ -235,7 +237,8 @@ void TcpConnection::shutdownInLoop()
 		{
 			if (::shutdown(bufferevent_getfd(bev_), SHUT_WR) == -1)
 			{
-				LOG_SYSERR << "shutdown[" << name_ << "]: " << base::strerror_tl(errno);
+				LOG_ERROR << "shutdown[" << name_ << "]: " << base::strerror_tl(errno);
+                handleClose();
 			}
 		}
 	}

@@ -34,9 +34,10 @@ public:
         server_.setThreadNum(numThreads);
     }
 
-    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& privateKeyFile)
+    void enableSSL(const std::string& cacertFile, const std::string& certFile, 
+        const std::string& keyFile, const std::string& passwd)
     {
-        server_.enableSSL(cacertFile, certFile, privateKeyFile);
+        server_.enableSSL(cacertFile, certFile, keyFile, passwd);
     }
 
     void start()
@@ -74,7 +75,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 6)
     {
-        LOG_FATAL << "Usage: " << argv[0] << " port num cacert cert key";
+        LOG_FATAL << "Usage: " << argv[0] << " port num cacert cert key passwd";
     }
 
     numThreads = atoi(argv[2]);
@@ -85,7 +86,7 @@ int main(int argc, char* argv[])
     net::EventLoop loop;
     net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
     SSLEchoServer server(&loop, listenAddr, 0);
-    server.enableSSL(argv[3], argv[4], argv[5]);
+    server.enableSSL(argv[3], argv[4], argv[5], argv[6]);
     server.start();
     loop.loop();
     std::cout << "done ." << std::endl;

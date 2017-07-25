@@ -21,7 +21,8 @@ class InitialConfig
 public:
 	InitialConfig()
 	{
-		::signal(SIGPIPE, SIG_IGN);
+        ::signal(SIGPIPE, SIG_IGN); 
+        LOG_INFO << "libevent version: " << event_get_version();
 		evthread_use_pthreads();
 	}
 };
@@ -36,11 +37,12 @@ EventLoop* EventLoop::getEventLoopOfCurrentThread()
 
 void EventLoop::handleRead(struct bufferevent *bev, void *ctx)
 {
+    LOG_DEBUG << "handle pending event";
 	EventLoop* loop = static_cast<EventLoop*>(ctx);
 	struct evbuffer* input = bufferevent_get_input(bev);
 	if (input == NULL)
 	{
-		LOG_ERROR << "bufferevent_get_input of EventLoop::wakup: "
+		LOG_ERROR << "bufferevent_get_input of EventLoop::handleRead: "
 			<< base::strerror_tl(errno);
 		return;
 	}
@@ -89,7 +91,7 @@ EventLoop::EventLoop()
 	evutil_socketpair(AF_UNIX, SOCK_STREAM, 0, pair);
 	evutil_make_socket_nonblocking(pair[0]);
 	evutil_make_socket_nonblocking(pair[1]);
-	wakeupPair_[0] = bufferevent_socket_new(base_, pair[0], BEV_OPT_CLOSE_ON_FREE);
+    wakeupPair_[0] = bufferevent_socket_new(base_, pair[0], BEV_OPT_CLOSE_ON_FREE);
 	wakeupPair_[1] = bufferevent_socket_new(base_, pair[1], BEV_OPT_CLOSE_ON_FREE|BEV_OPT_THREADSAFE);
 	if (wakeupPair_[0] == NULL || wakeupPair_[1] == NULL)
 	{

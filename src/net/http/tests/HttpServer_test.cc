@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        LOG_FATAL << "Usage: " << argv[0] << " port [cacert cert key]";
+        LOG_FATAL << "Usage: " << argv[0] << " port [cacert cert key passwd]";
     }
 
 	base::Logger::setLogLevel(base::Logger::DEBUG);
@@ -91,9 +91,28 @@ int main(int argc, char* argv[])
     net::HttpServer httpServer(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
     httpServer.setRequestCallback(onRequest);
     httpServer.setThreadNum(numThreads);
-    if (argc > 3)
+    if (argc == 5)
     {
-        httpServer.enableSSL(argv[2], argv[3], argv[4]);
+        if (strcmp(argv[2], "\"\"") == 0)
+        {
+            httpServer.enableSSL("", argv[3], argv[4], "");
+        }
+        else
+        {
+            httpServer.enableSSL(argv[2], argv[3], argv[4], "");
+        }       
+    }
+
+    if (argc == 6)
+    {
+        if (strcmp(argv[2], "\"\"") == 0)
+        {
+            httpServer.enableSSL("", argv[3], argv[4], argv[5]);
+        }
+        else
+        {
+            httpServer.enableSSL(argv[2], argv[3], argv[4], argv[5]);
+        }      
     }
     
     httpServer.start();

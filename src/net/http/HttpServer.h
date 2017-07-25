@@ -19,7 +19,10 @@ public:
 			   const InetAddress& listenAddr,
 			   const std::string& name);
 
-    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
+    void enableSSL(const std::string& cacertFile,
+                   const std::string& certFile,
+                   const std::string& keyFile,
+                   const std::string& passwd);
 	
 	void setThreadInitCallback(const ThreadInitCallback& cb)
 	{ threadInitCallback_ = cb; }

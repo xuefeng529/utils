@@ -54,9 +54,12 @@ TcpClient::~TcpClient()
     }
 }
 
-void TcpClient::enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile)
+void TcpClient::enableSSL(const std::string& cacertFile,
+                          const std::string& certFile,
+                          const std::string& keyFile,
+                          const std::string& passwd)
 {
-    sslCtx_ = ssl::init(cacertFile, certFile, keyFile);
+    sslCtx_ = ssl::init(cacertFile, certFile, keyFile, passwd);
     if (sslCtx_ == NULL)
     {
         LOG_FATAL << "ssl::init: " << ssl::error();

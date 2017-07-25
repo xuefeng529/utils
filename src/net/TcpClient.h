@@ -25,7 +25,10 @@ public:
 
 	~TcpClient(); 
 
-    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
+    void enableSSL(const std::string& cacertFile,
+                   const std::string& certFile,
+                   const std::string& keyFile,
+                   const std::string& passwd);
 
 	void connect();
 	void disconnect();

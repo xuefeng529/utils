@@ -30,7 +30,10 @@ public:
 
 	~TcpServer();
 
-    void enableSSL(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
+    void enableSSL(const std::string& cacertFile,
+                   const std::string& certFile, 
+                   const std::string& keyFile, 
+                   const std::string& passwd);
 
 	typedef boost::function<void(EventLoop*)> ThreadInitCallback;
 	void setThreadInitCallback(const ThreadInitCallback& cb)

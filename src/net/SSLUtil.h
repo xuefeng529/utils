@@ -14,7 +14,11 @@ namespace net
 namespace ssl
 {
     
-SSL_CTX* init(const std::string& cacertFile, const std::string& certFile, const std::string& keyFile);
+SSL_CTX* init(const std::string& cacertFile,
+              const std::string& certFile, 
+              const std::string& keyFile, 
+              const std::string& passwd);
+
 void release(SSL_CTX* ctx);
 SSL* open(SSL_CTX* ctx);
 void close(SSL* ssl);

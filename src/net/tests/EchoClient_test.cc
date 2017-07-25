@@ -18,7 +18,7 @@
 using namespace base;
 using namespace net;
 
-char g_text[2*4096];
+char g_text[3*1024];
 
 class EchoClient;
 boost::ptr_vector<EchoClient> clients;
@@ -74,8 +74,12 @@ private:
 		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (conn->connected())
 		{
-			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+			//LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+            //int ctx = 1;
+            //conn->setContext(ctx);
 			conn->send(g_text, sizeof(g_text));
+            //conn->send("send in loop", strlen("send in loop"));
+            //conn->getLoop()->queueInLoop(boost::bind(&EchoClient::send, this, conn, "send out loop"));
 			++current;
 			if (static_cast<size_t>(current) < clients.size())
 			{
@@ -87,7 +91,7 @@ private:
 		}
 		else
 		{
-			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
+			//LOG_INFO << "Connection number: " << numConn.decrementAndGet();
 			/*size_t numBytes = boost::any_cast<size_t>(conn->getContext());
 			LOG_ERROR << "recved the number of byte: " << numBytes;
 			if (numBytes != 4 * 1024)
@@ -97,6 +101,11 @@ private:
 		}
 	}
 
+    void send(const TcpConnectionPtr& conn, const std::string& message)
+    {
+        conn->send(message);
+    }
+
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
 		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
@@ -105,8 +114,10 @@ private:
 		*numBytes += buffer->length();*/
 		std::string msg;
 		buffer->retrieveAllAsString(&msg);
-		conn->send(msg);
-		client_.disconnect();
+        //LOG_INFO << msg;
+        //conn->send("send in loop");
+        //conn->getLoop()->queueInLoop(boost::bind(&EchoClient::send, this, conn, "send out loop"));
+		//client_.disconnect();
 		
 		/*net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
@@ -115,7 +126,19 @@ private:
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
-		//LOG_INFO << "onWriteComplete";
+        LOG_INFO << "onWriteComplete[" << conn->name() << "]";
+        /*int* ctx = boost::any_cast<int>(conn->getMutableContext());
+        if (*ctx <= 9)
+        {
+        conn->send(g_text, sizeof(g_text));
+        (*ctx)++;
+        }
+        else
+        {
+        conn->close();
+        }*/
+		
+        conn->send(g_text, sizeof(g_text));
 		//conn->send(g_text);
 	}
 

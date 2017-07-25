@@ -34,3 +34,6 @@ target_link_libraries(CodecClient_test net)
 
 add_executable(SSLEchoServer_test SSLEchoServer_test.cc)
 target_link_libraries(SSLEchoServer_test net base)
+
+add_executable(apns_client_test apns_client_test.cc)
+target_link_libraries(apns_client_test net base)

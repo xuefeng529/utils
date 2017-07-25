@@ -98,9 +98,14 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length();
+		//LOG_INFO << conn->name() << ": " << buffer->length();
 		//size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
 		//*numBytes += buffer->length();
+        /*char* msg = new char[buffer->length() + 1];
+        memset(msg, 0, buffer->length() + 1);
+        buffer->peekAsBytes(msg, buffer->length());
+        LOG_INFO << msg;
+        delete[] msg;*/
 		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
 		assert(buffer->length() == 0);

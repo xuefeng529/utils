@@ -11,8 +11,10 @@
 #include <event2/buffer.h>
 #include <event2/thread.h>
 
-#include<openssl/ssl.h>
-#include<openssl/err.h>
-#include<openssl/rand.h>
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/rand.h>
+#include <openssl/crypto.h>
 
 #endif // NET_CONFIG_H
