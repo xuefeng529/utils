@@ -9,6 +9,7 @@
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
 #include "net/Buffer.h"
+#include "net/SslContext.h"
 
 #include <boost/bind.hpp>
 #include <utility>
@@ -17,27 +18,22 @@
 #include <iostream>
 
 int numThreads = 0;
+base::AtomicInt32 numConn;
 
-class SSLEchoServer
+class SslEchoServer
 {
 public:
-    SSLEchoServer(net::EventLoop* loop, const net::InetAddress& listenAddr, time_t readIdle)
+    SslEchoServer(net::EventLoop* loop, const net::InetAddress& listenAddr, time_t readIdle, net::SslContext* sslCtx)
         : loop_(loop),
-        server_(loop, listenAddr, "SSLEchoServer", readIdle)
+        server_(loop, listenAddr, "SslEchoServer", readIdle, sslCtx)
     {
         server_.setConnectionCallback(
-            boost::bind(&SSLEchoServer::onConnection, this, _1));
+            boost::bind(&SslEchoServer::onConnection, this, _1));
         server_.setMessageCallback(
-            boost::bind(&SSLEchoServer::onMessage, this, _1, _2));
+            boost::bind(&SslEchoServer::onMessage, this, _1, _2));
         server_.setWriteCompleteCallback(
-            boost::bind(&SSLEchoServer::onWriteComplete, this, _1));
+            boost::bind(&SslEchoServer::onWriteComplete, this, _1));
         server_.setThreadNum(numThreads);
-    }
-
-    void enableSSL(const std::string& cacertFile, const std::string& certFile, 
-        const std::string& keyFile, const std::string& passwd)
-    {
-        server_.enableSSL(cacertFile, certFile, keyFile, passwd);
     }
 
     void start()
@@ -48,22 +44,28 @@ public:
 private:
     void onConnection(const net::TcpConnectionPtr& conn)
     {
-        LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+        if (!conn->connected())
+        {
+            LOG_INFO << "Connection number: " << numConn.decrementAndGet();            
+        }
+        else
+        {
+            LOG_INFO << "Connection number: " << numConn.incrementAndGet();           
+        }
     }
 
     void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
     {
-        LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
-        std::string msg;
-        buffer->retrieveAllAsString(&msg);
-        LOG_INFO << msg;
+        //LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+        net::BufferPtr sendBuffer(new net::Buffer());
+        sendBuffer->removeBuffer(buffer);
         assert(buffer->length() == 0);
-        conn->send(msg);
+        conn->send(sendBuffer);
     }
 
     void onWriteComplete(const net::TcpConnectionPtr& conn)
     {
-        LOG_INFO << "onWriteComplete" << "[" << conn->name() << "]";
+        //LOG_INFO << "onWriteComplete" << "[" << conn->name() << "]";
     }
 
 private:
@@ -75,20 +77,21 @@ int main(int argc, char* argv[])
 {
     if (argc < 6)
     {
-        LOG_FATAL << "Usage: " << argv[0] << " port num cacert cert key passwd";
+        LOG_FATAL << "Usage: " << argv[0] << " port num cacert cert key";
     }
 
     numThreads = atoi(argv[2]);
     char name[256];
     strncpy(name, argv[0], 256);
-    base::Logger::setLogLevel(base::Logger::INFO);
+    base::Logger::setLogLevel(base::Logger::INFO); 
     LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
+    net::SslContext sslCtx;
+    sslCtx.init(argv[3], argv[4], argv[5], "");
     net::EventLoop loop;
     net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-    SSLEchoServer server(&loop, listenAddr, 0);
-    server.enableSSL(argv[3], argv[4], argv[5], argv[6]);
+    SslEchoServer server(&loop, listenAddr, 10, &sslCtx);
     server.start();
     loop.loop();
-    std::cout << "done ." << std::endl;
+    LOG_INFO << "done .";
     return 0;
 }

@@ -24,14 +24,6 @@ class EchoClient;
 boost::ptr_vector<EchoClient> clients;
 int current = 0;
 base::AtomicInt32 numConn;
-//base::AtomicInt32 numClosed;
-
-const char* url = "GET /UserCfgGet.aspx?a=6&b=1,600002 HTTP/1.0\r\n"
-"Accept: */*\r\n"
-"Connection: Keep - Alive\r\n"
-"Host: 172.16.56.27:9898\r\n"
-"User-Agent: ApacheBench/2.3\r\n\r\n";
-
 
 class EchoClient : boost::noncopyable
 {
@@ -70,35 +62,16 @@ private:
 		/*LOG_DEBUG << conn->localAddress().toIpPort() << " -> "
 			<< conn->peerAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
-
-		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
+		
 		if (conn->connected())
-		{
-			//LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-            //int ctx = 1;
-            //conn->setContext(ctx);
-			conn->send(g_text, sizeof(g_text));
-            //conn->send("send in loop", strlen("send in loop"));
-            //conn->getLoop()->queueInLoop(boost::bind(&EchoClient::send, this, conn, "send out loop"));
+		{			
+			conn->send(g_text, sizeof(g_text));            
 			++current;
 			if (static_cast<size_t>(current) < clients.size())
 			{
 				clients[current].connect();
-			}
-			
-			/*size_t numBytes = 0;
-			conn->setContext(numBytes);*/
-		}
-		else
-		{
-			//LOG_INFO << "Connection number: " << numConn.decrementAndGet();
-			/*size_t numBytes = boost::any_cast<size_t>(conn->getContext());
-			LOG_ERROR << "recved the number of byte: " << numBytes;
-			if (numBytes != 4 * 1024)
-			{
-				LOG_FATAL << "recved the number of byte error: ";
-			}*/
-		}
+			}						
+		}		
 	}
 
     void send(const TcpConnectionPtr& conn, const std::string& message)
@@ -108,47 +81,20 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
-		
-		/*size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
-		*numBytes += buffer->length();*/
+		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";				
 		std::string msg;
-		buffer->retrieveAllAsString(&msg);
-        //LOG_INFO << msg;
-        //conn->send("send in loop");
-        //conn->getLoop()->queueInLoop(boost::bind(&EchoClient::send, this, conn, "send out loop"));
-		//client_.disconnect();
-		
-		/*net::BufferPtr sendBuffer(new net::Buffer());
-		sendBuffer->removeBuffer(buffer);
-		conn->send(sendBuffer);*/
+		buffer->retrieveAllAsString(&msg);       
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
-        LOG_INFO << "onWriteComplete[" << conn->name() << "]";
-        /*int* ctx = boost::any_cast<int>(conn->getMutableContext());
-        if (*ctx <= 9)
-        {
-        conn->send(g_text, sizeof(g_text));
-        (*ctx)++;
-        }
-        else
-        {
-        conn->close();
-        }*/
-		
-        conn->send(g_text, sizeof(g_text));
-		//conn->send(g_text);
+        LOG_INFO << "onWriteComplete[" << conn->name() << "]";       		
+        conn->send(g_text, sizeof(g_text));		
 	}
 
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
 	{
-		LOG_INFO << "onHeartbeat";
-		/*static int count = 0;
-		count++;
-		LOG_INFO << "count: " << count;*/
-		//conn->send("hearbeat");
+		LOG_INFO << "onHeartbeat";		
 	}
 
 	EventLoop* loop_;

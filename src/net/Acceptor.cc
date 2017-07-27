@@ -39,7 +39,10 @@ Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr)
 
 Acceptor::~Acceptor()
 {
-	evconnlistener_free(listener_);
+    if (listener_ != NULL)
+    {
+        evconnlistener_free(listener_);
+    }
 }
 
 void Acceptor::listen()

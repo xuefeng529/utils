@@ -1,5 +1,6 @@
 #include "net/http/HttpServer.h"
 #include "net/http/HttpContext.h"
+#include "net/SslContext.h"
 #include "net/Buffer.h"
 #include "base/Logging.h"
 
@@ -21,22 +22,15 @@ void defaultHttpCallback(const HttpRequest& request, HttpResponse* response)
 
 HttpServer::HttpServer(EventLoop* loop,
 					   const InetAddress& listenAddr,
-					   const std::string& name)
-	: server_(loop, listenAddr, name),
+					   const std::string& name,
+                       SslContext* sslCtx)
+	: server_(loop, listenAddr, name, 0, sslCtx),
 	  requestCallback_(detail::defaultHttpCallback)
 {
 	server_.setConnectionCallback(
 		boost::bind(&HttpServer::handleConnection, this, _1));
 	server_.setMessageCallback(
 		boost::bind(&HttpServer::handleMessage, this, _1, _2));
-}
-
-void HttpServer::enableSSL(const std::string& cacertFile,
-                           const std::string& certFile,
-                           const std::string& keyFile,
-                           const std::string& passwd)
-{
-    server_.enableSSL(cacertFile, certFile, keyFile, passwd);
 }
 
 void HttpServer::start()

@@ -1,6 +1,7 @@
 #include "net/TcpClient.h"
 #include "net/EventLoop.h"
 #include "net/Endian.h"
+#include "net/SslContext.h"
 #include "base/Logging.h"
 #include "base/Thread.h"
 #include "base/StringUtil.h"
@@ -455,32 +456,26 @@ const char* get_status_stringdesc(int iStatus)
     return pszDesc;
 }
 
-class APNSClient
+class ApnsClient
 {
 public:
-    APNSClient(net::EventLoop* loop,
+    ApnsClient(net::EventLoop* loop,
         const net::InetAddress& listenAddr,
         const std::string& name,
-        uint64_t heartbeat)
+        uint64_t heartbeat, 
+        net::SslContext* sslCtx)
         : loop_(loop),
-        client_(loop, listenAddr, name, heartbeat)
+        client_(loop, listenAddr, name, heartbeat, sslCtx)
     {
         client_.setConnectionCallback(
-            boost::bind(&APNSClient::onConnection, this, _1));
+            boost::bind(&ApnsClient::onConnection, this, _1));
         client_.setMessageCallback(
-            boost::bind(&APNSClient::onMessage, this, _1, _2));
+            boost::bind(&ApnsClient::onMessage, this, _1, _2));
         client_.setWriteCompleteCallback(
-            boost::bind(&APNSClient::onWriteComplete, this, _1));
+            boost::bind(&ApnsClient::onWriteComplete, this, _1));
         client_.setHearbeatCallback(
-            boost::bind(&APNSClient::onHeartbeat, this, _1));
+            boost::bind(&ApnsClient::onHeartbeat, this, _1));
         //client_.enableRetry();
-    }
-
-    void enableSSL(const std::string& certFile,
-        const std::string& keyFile,
-        const std::string& passwd)
-    {
-        client_.enableSSL("", certFile, keyFile, passwd);
     }
 
     void connect()
@@ -567,6 +562,8 @@ int main(int argc, char* argv[])
         LOG_FATAL << "Usage: " << argv[0] << " ip port cert key passwd";
     }
   
+    net::SslContext sslCtx;
+    sslCtx.init("", argv[3], argv[4], argv[5]);
     net::EventLoop loop;
     net::InetAddress serverAddr(atoi(argv[2]));
     if (!net::InetAddress::resolve(argv[1], &serverAddr))
@@ -574,8 +571,7 @@ int main(int argc, char* argv[])
         LOG_FATAL << "net::InetAddress::resolve";
     }
     
-    APNSClient cli(&loop, serverAddr, "APNSClient", 0);
-    cli.enableSSL(argv[3], argv[4], argv[5]);
+    ApnsClient cli(&loop, serverAddr, "ApnsClient", 0, &sslCtx);
     cli.connect();
     loop.loop();
     LOG_INFO << "done";

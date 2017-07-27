@@ -20,7 +20,8 @@ set(HEADERS
   Timer.h
   TimerQueue.h
   LengthHeaderCodec.h
-  SSLUtil.h
+  SslContext.h
+  Ssl.h
   )
 install(FILES ${HEADERS} DESTINATION include/net)
 install(TARGETS net DESTINATION lib)

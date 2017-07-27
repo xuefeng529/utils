@@ -17,12 +17,8 @@ public:
 
 	HttpServer(EventLoop* loop,
 			   const InetAddress& listenAddr,
-			   const std::string& name);
-
-    void enableSSL(const std::string& cacertFile,
-                   const std::string& certFile,
-                   const std::string& keyFile,
-                   const std::string& passwd);
+			   const std::string& name,
+               SslContext* sslCtx = NULL);   
 	
 	void setThreadInitCallback(const ThreadInitCallback& cb)
 	{ threadInitCallback_ = cb; }

@@ -3,15 +3,13 @@
 
 #include "base/Mutex.h"
 #include "net/TcpConnection.h"
-#include "net/SSLUtil.h"
-
-#include <boost/noncopyable.hpp>
 
 namespace net
 {
 
 class EventLoop;
 class Connector;
+class SslContext;
 
 typedef boost::function<void(const TcpConnectionPtr&)> HearbeatCallback;
 
@@ -21,14 +19,10 @@ public:
 	TcpClient(EventLoop* loop,
 			  const InetAddress& serverAddr,
 			  const std::string& name,
-			  time_t heartbeat = 0);
+			  time_t heartbeat = 0,
+              SslContext* sslCtx = NULL);
 
-	~TcpClient(); 
-
-    void enableSSL(const std::string& cacertFile,
-                   const std::string& certFile,
-                   const std::string& keyFile,
-                   const std::string& passwd);
+	~TcpClient();     
 
 	void connect();
 	void disconnect();
@@ -100,7 +94,7 @@ private:
 	TcpConnectionPtr connection_;
 	time_t retryDelayS_;
 	bool retry_;
-    SSL_CTX* sslCtx_;
+    SslContext* sslCtx_;
 };
 
 } // namespace net

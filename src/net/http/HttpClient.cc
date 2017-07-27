@@ -1,5 +1,6 @@
 #include "net/http/HttpClient.h"
 #include "net/http/HttpContext.h"
+#include "net/SslContext.h"
 #include "net/EventLoop.h"
 #include "net/EventLoopThread.h"
 #include "base/CountDownLatch.h"
@@ -13,26 +14,16 @@
 namespace net
 {
 
-HttpClient::HttpClient()
+HttpClient::HttpClient(SslContext* sslCtx)
     : loopThread_(new EventLoopThread()),
-      loop_(loopThread_->startLoop())
+      loop_(loopThread_->startLoop()),
+      sslCtx_(sslCtx)
 {
     assert(loop_ != NULL);
 }
 
 HttpClient::~HttpClient()
 {
-}
-
-void HttpClient::enableSSL(const std::string& cacertFile,
-                           const std::string& certFile,
-                           const std::string& keyFile,
-                           const std::string& passwd)
-{
-    cacertFile_ = cacertFile;
-    certFile_ = certFile;
-    keyFile_ = keyFile;
-    passwd_ = passwd;
 }
 
 HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method method, bool keepalive)
@@ -101,15 +92,11 @@ HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method met
     request.setCloseConnection(!keepalive);
     if (host != lastHost_ || !client_ || !client_->isConnected() || !keepalive)
     {
-        client_.reset(new TcpClient(loop_, serverAddr, "HttpClient"));          
+        client_.reset(new TcpClient(loop_, serverAddr, "HttpClient", 0, sslCtx_));
         client_->setConnectionCallback(
             boost::bind(&HttpClient::handleConnection, this, _1, request));
         client_->setMessageCallback(
-            boost::bind(&HttpClient::handleMessage, this, _1, _2));
-        if (!cacertFile_.empty() && !keyFile_.empty() && !certFile_.empty())
-        {
-            client_->enableSSL(cacertFile_, certFile_, keyFile_, passwd_);
-        }
+            boost::bind(&HttpClient::handleMessage, this, _1, _2));       
         client_->connect();
     }
     else

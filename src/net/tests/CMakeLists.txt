@@ -32,8 +32,11 @@ target_link_libraries(CodecClient_test net)
 #add_executable(ssl_client ssl_client.cc)
 #target_link_libraries(ssl_client ssl)
 
-add_executable(SSLEchoServer_test SSLEchoServer_test.cc)
-target_link_libraries(SSLEchoServer_test net base)
+add_executable(SslEchoServer_test SslEchoServer_test.cc)
+target_link_libraries(SslEchoServer_test net base)
 
-add_executable(apns_client_test apns_client_test.cc)
-target_link_libraries(apns_client_test net base)
+add_executable(SslEchoClient_test SslEchoClient_test.cc)
+target_link_libraries(SslEchoClient_test net base)
+
+add_executable(ApnsClient_test ApnsClient_test.cc)
+target_link_libraries(ApnsClient_test net base)

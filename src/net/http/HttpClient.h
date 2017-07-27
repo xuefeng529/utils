@@ -19,12 +19,9 @@ class EventLoopThread;
 class HttpClient : boost::noncopyable
 {
 public:
-	HttpClient();
+    HttpClient(SslContext* sslCtx = NULL);
     ~HttpClient();
-    void enableSSL(const std::string& cacertFile,
-                   const std::string& certFile,
-                   const std::string& keyFile,
-                   const std::string& passwd);
+
     HttpResponse request(const std::string& url, HttpRequest::Method method = HttpRequest::kGet, bool keepalive = true);
 
 private:
@@ -38,10 +35,7 @@ private:
     boost::scoped_ptr<base::CountDownLatch> requestLatch_;
     boost::scoped_ptr<HttpResponse> response_;
     std::string lastHost_;
-    std::string cacertFile_;
-    std::string certFile_;
-    std::string keyFile_;
-    std::string passwd_;
+    SslContext* sslCtx_;
 };
 
 } // namespace net

@@ -1,6 +1,7 @@
 #include "net/http/HttpServer.h"
 #include "net/http/HttpRequest.h"
 #include "net/http/HttpResponse.h"
+#include "net/SslContext.h"
 #include "net/EventLoop.h"
 #include "base/Atomic.h"
 #include "base/Timestamp.h"
@@ -87,35 +88,42 @@ int main(int argc, char* argv[])
 	base::Logger::setLogLevel(base::Logger::DEBUG);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	int numThreads = static_cast<int>(base::ProcessInfo::getCpuCoresCount() * 2);
+    net::SslContext sslCtx;
 	net::EventLoop loop;
-    net::HttpServer httpServer(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer");
-    httpServer.setRequestCallback(onRequest);
-    httpServer.setThreadNum(numThreads);
+    boost::scoped_ptr<net::HttpServer> httpServer(
+        new net::HttpServer(&loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer"));
     if (argc == 5)
     {
         if (strcmp(argv[2], "\"\"") == 0)
         {
-            httpServer.enableSSL("", argv[3], argv[4], "");
+            sslCtx.init("", argv[3], argv[4], "");
         }
         else
         {
-            httpServer.enableSSL(argv[2], argv[3], argv[4], "");
-        }       
+            sslCtx.init(argv[2], argv[3], argv[4], "");
+        } 
+        httpServer.reset(new net::HttpServer(
+            &loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer", &sslCtx));
     }
 
     if (argc == 6)
     {
         if (strcmp(argv[2], "\"\"") == 0)
         {
-            httpServer.enableSSL("", argv[3], argv[4], argv[5]);
+            sslCtx.init("", argv[3], argv[4], argv[5]);
         }
         else
         {
-            httpServer.enableSSL(argv[2], argv[3], argv[4], argv[5]);
-        }      
+            sslCtx.init(argv[2], argv[3], argv[4], argv[5]);
+        } 
+        httpServer.reset(new net::HttpServer(
+            &loop, net::InetAddress(static_cast<uint16_t>(atoi(argv[1]))), "HttpServer", &sslCtx));
     }
+
+    httpServer->setRequestCallback(onRequest);
+    httpServer->setThreadNum(numThreads);
     
-    httpServer.start();
+    httpServer->start();
 	loop.loop();
 }
 

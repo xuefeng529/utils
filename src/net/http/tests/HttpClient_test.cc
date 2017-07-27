@@ -2,10 +2,10 @@
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
 #include "net/Buffer.h"
-
 #include "net/http/HttpClient.h"
 #include "net/http/HttpRequest.h"
 #include "net/http/HttpResponse.h"
+#include "net/SslContext.h"
 
 #include <boost/bind.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -70,35 +70,38 @@ int main(int argc, char* argv[])
 
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
     LOG_INFO << "please input url or q exit!";
+    net::SslContext sslCtx;
     std::string line;
-    net::HttpClient httpClient;
+    boost::scoped_ptr<net::HttpClient> httpClient(new net::HttpClient());
     if (argc == 5)
     {
         if (strcmp(argv[2], "\"\"") == 0)
         {
-            httpClient.enableSSL("", argv[3], argv[4], "");
+            sslCtx.init("", argv[3], argv[4], "");
         }
         else
         {
-            httpClient.enableSSL(argv[2], argv[3], argv[4], "");
-        }     
+            sslCtx.init(argv[2], argv[3], argv[4], "");
+        }   
+        httpClient.reset(new net::HttpClient(&sslCtx));
     }
 
     if (argc == 6)
     {
         if (strcmp(argv[2], "\"\"") == 0)
         {
-            httpClient.enableSSL("", argv[3], argv[4], argv[5]);
+            sslCtx.init("", argv[3], argv[4], argv[5]);
         }
         else
         {
-            httpClient.enableSSL(argv[2], argv[3], argv[4], argv[5]);
+            sslCtx.init(argv[2], argv[3], argv[4], argv[5]);
         }
+        httpClient.reset(new net::HttpClient(&sslCtx));
     }
 
     while (std::getline(std::cin, line) && line != "q")
     {
-        net::HttpResponse response = httpClient.request(line, net::HttpRequest::kGet, keepalive);
+        net::HttpResponse response = httpClient->request(line, net::HttpRequest::kGet, keepalive);
         LOG_INFO << response.statusCode() << " " << response.statusMessage();
         LOG_INFO << "body:" << response.body();
     }

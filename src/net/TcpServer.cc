@@ -1,5 +1,7 @@
 #include "net/TcpServer.h"
 #include "net/config.h"
+#include "net/SslContext.h"
+#include "net/Ssl.h"
 #include "net/Acceptor.h"
 #include "net/EventLoop.h"
 #include "net/EventLoopThreadPool.h"
@@ -16,7 +18,8 @@ namespace net
 TcpServer::TcpServer(EventLoop* loop,
 					 const InetAddress& listenAddr,
 					 const std::string& name,
-					 time_t readIdle)
+					 time_t readIdle,
+                     SslContext* sslCtx)
 	: loop_(loop),
 	  ipPort_(listenAddr.toIp()),
 	  name_(name),
@@ -26,7 +29,7 @@ TcpServer::TcpServer(EventLoop* loop,
 	  connectionCallback_(net::defaultConnectionCallback),
 	  messageCallback_(net::defaultMessageCallback),
 	  nextConnId_(1),
-      sslCtx_(NULL)
+      sslCtx_(sslCtx)
 	  //connectionBuckets_(readTimeout)
 {
 	LOG_DEBUG << "TcpServer::ctor[" << name_ << "]";
@@ -51,24 +54,7 @@ TcpServer::~TcpServer()
 		conn->getLoop()->runInLoop(
 			boost::bind(&TcpConnection::connectDestroyed, conn));
 		conn.reset();
-	}
-
-    if (sslCtx_ != NULL)
-    {
-        ssl::release(sslCtx_);
-    }
-}
-
-void TcpServer::enableSSL(const std::string& cacertFile,
-                          const std::string& certFile,
-                          const std::string& keyFile,
-                          const std::string& passwd)
-{
-    sslCtx_ = ssl::init(cacertFile, certFile, keyFile, passwd);
-    if (sslCtx_ == NULL)
-    {
-        LOG_FATAL << "ssl::init: " << ssl::error();
-    }
+	}   
 }
 
 void TcpServer::setThreadNum(int numThreads)
@@ -102,11 +88,9 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 	socklen_t addrlen = static_cast<socklen_t>(sizeof(sin));
 	if (getsockname(sockfd, reinterpret_cast<struct sockaddr*>(&sin), &addrlen) < 0)
 	{
-		LOG_SYSERR << "getsockname of TcpServer::newConnection[" << connName << "]: "
-			<< base::strerror_tl(errno);
-		return;
+		LOG_ERROR << "getsockname of TcpServer::newConnection[" << connName << "]: "
+			<< base::strerror_tl(errno);		
 	}
-
 	InetAddress localAddr(sin);
 	TcpConnectionPtr conn(new TcpConnection(
 		ioLoop, connName, sockfd, localAddr, peerAddr, readIdle_));
@@ -114,13 +98,11 @@ void TcpServer::newConnection(int sockfd, const InetAddress& peerAddr)
 	conn->setConnectionCallback(boost::bind(&TcpServer::handleConnection, this, _1));
 	conn->setMessageCallback(boost::bind(&TcpServer::handleMessage, this, _1, _2));
 	conn->setWriteCompleteCallback(boost::bind(&TcpServer::handleWriteComplete, this, _1));
-	conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));
-    SSL* ssl = NULL;
+	conn->setCloseCallback(boost::bind(&TcpServer::removeConnection, this, _1));    
     if (sslCtx_ != NULL)
-    {
-        ssl = ssl::open(sslCtx_);
+    {        
         ioLoop->runInLoop(boost::bind(&TcpConnection::connectEstablished, 
-            conn, ssl, TcpConnection::kSSLAccepting));
+            conn, new Ssl(*sslCtx_), TcpConnection::kSslAccepting));
     }
     else
     {

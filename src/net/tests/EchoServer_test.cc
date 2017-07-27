@@ -78,68 +78,31 @@ private:
 		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
 		if (!conn->connected())
 		{
-			LOG_INFO << "Connection number: " << numConn.decrementAndGet();
-			/*Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
-			LOG_ERROR << "recved the number of byte: " << entry->numBytes / 1024;
-			if (entry->numBytes != 4 * 1024 * 10)
-			{
-			LOG_ERROR << "recved the number of byte error: ";
-			}*/
+			LOG_INFO << "Connection number: " << numConn.decrementAndGet();			
 		}
 		else
 		{
-			LOG_INFO << "Connection number: " << numConn.incrementAndGet();
-			//size_t numBytes = 0;
-			//conn->setContext(numBytes);
-			/*Entry entry = { 0, 0 };
-			conn->setContext(entry);*/
+            LOG_INFO << "Connection number: " << numConn.incrementAndGet();
 		}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
-	{
-		//LOG_INFO << conn->name() << ": " << buffer->length();
-		//size_t* numBytes = boost::any_cast<size_t>(conn->getMutableContext());
-		//*numBytes += buffer->length();
-        /*char* msg = new char[buffer->length() + 1];
-        memset(msg, 0, buffer->length() + 1);
-        buffer->peekAsBytes(msg, buffer->length());
-        LOG_INFO << msg;
-        delete[] msg;*/
+	{		
 		net::BufferPtr sendBuffer(new net::Buffer());
 		sendBuffer->removeBuffer(buffer);
 		assert(buffer->length() == 0);
-		conn->send(sendBuffer);
-		/*if (*numBytes == 4096)
-		{
-		conn->close();
-		}*/
-		
-		/*Entry* entry = boost::any_cast<Entry>(conn->getMutableContext());
-		if (entry->cnt < 10)
-		{
-			entry->numBytes += buffer->length();
-			net::BufferPtr sendBuffer(new net::Buffer());
-			sendBuffer->removeBuffer(buffer);
-			conn->send(sendBuffer);
-			entry->cnt++;
-		}
-		else
-		{
-			conn->shutdown();
-		}*/
+		conn->send(sendBuffer);		
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
-		//LOG_INFO << "onWriteComplete" << "[" << conn->name() << "]";
-		//conn->send("hello\n");
+		//LOG_INFO << "onWriteComplete" << "[" << conn->name() << "]"		
 	}
 
-	/*void onReadTimeout(const net::TcpConnectionPtr& conn)
-	{
-	LOG_INFO << conn->name() << ": onReadTimeout";
-	}*/
+    void onReadTimeout(const net::TcpConnectionPtr& conn)
+    {
+        //LOG_INFO << conn->name() << ": onReadTimeout";
+    }
 
 	net::EventLoop* loop_;
 	net::TcpServer server_;
@@ -165,23 +128,16 @@ int main(int argc, char* argv[])
 	strncpy(name, argv[0], 256);
 	//base::AsyncLogging log(::basename(name), kRollSize);
 	//log.start();
-	//g_asyncLog = &log;
-	//base::TimeZone shanghai("/usr/share/zoneinfo/Asia/Shanghai");
-	//base::Logger::setTimeZone(shanghai);
+	//g_asyncLog = &log
 	base::Logger::setLogLevel(base::Logger::INFO);
 	//base::Logger::setOutput(asyncOutput);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
-
-	//threads.setMaxQueueSize(10000);
-	//threads.start(4);
-
 	memset(g_text, 's', sizeof(g_text));
-	net::EventLoop loop;
-	//g_loop = &loop;
+	net::EventLoop loop;	
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
 	EchoServer server(&loop, listenAddr, 0);
 	server.start();
 	loop.loop();
 	//log.stop();
-	std::cout << "done ." << std::endl;
+    LOG_INFO << "done .";
 }

@@ -1,4 +1,5 @@
 #include "net/TcpConnection.h"
+#include "net/Ssl.h"
 #include "net/EventLoop.h"
 #include "net/config.h"
 #include "base/Logging.h"
@@ -97,8 +98,7 @@ TcpConnection::TcpConnection(EventLoop* loop,
 	  readIdle_(readIdle),
 	  state_(kConnecting),
 	  closeType_(kUnknow),
-	  bev_(NULL),
-      ssl_(NULL)
+	  bev_(NULL)
 {
 	LOG_DEBUG << "TcpConnection::ctor[" << name_ << "] at " << this
 		<< " fd=" << sockfd_;
@@ -111,9 +111,9 @@ TcpConnection::~TcpConnection()
 	assert(state_ == kDisconnected);
 	if (bev_ != NULL)
 	{
-        if (ssl_ != NULL)
+        if (ssl_)
         {
-            ssl::close(ssl_);
+            ssl_.reset();
         }
 		bufferevent_free(bev_);
 	}
@@ -171,19 +171,32 @@ void TcpConnection::connectEstablished()
 	connectionCallback_(shared_from_this());
 }
 
-void TcpConnection::connectEstablished(SSL* ssl, SSLState state)
+void TcpConnection::connectEstablished(Ssl* ssl, SslState state)
 {
     loop_->assertInLoopThread();
-    ssl_ = ssl;
-    if (state == kSSLAccepting)
+    if (ssl == NULL)
+    {
+        LOG_ERROR << "ssl NULL";
+        handleClose();
+        return;
+    }
+
+    ssl_.reset(ssl);
+    if (state == kSslAccepting)
     {
         bev_ = bufferevent_openssl_socket_new(loop_->eventBase(), sockfd_,
-            ssl_, BUFFEREVENT_SSL_ACCEPTING, BEV_OPT_CLOSE_ON_FREE);
+            ssl_->get(), BUFFEREVENT_SSL_ACCEPTING, BEV_OPT_CLOSE_ON_FREE);
+    }
+    else if (state == kSslConnecting)
+    {
+        bev_ = bufferevent_openssl_socket_new(loop_->eventBase(), sockfd_,
+            ssl_->get(), BUFFEREVENT_SSL_CONNECTING, BEV_OPT_CLOSE_ON_FREE);
     }
     else
     {
-        bev_ = bufferevent_openssl_socket_new(loop_->eventBase(), sockfd_,
-            ssl_, BUFFEREVENT_SSL_CONNECTING, BEV_OPT_CLOSE_ON_FREE);
+        LOG_ERROR << "unknow ssl state";
+        handleClose();
+        return;
     }
     
     if (bev_ == NULL)

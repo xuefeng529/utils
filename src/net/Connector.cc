@@ -37,7 +37,10 @@ Connector::Connector(EventLoop* loop, const InetAddress& serverAddr)
 
 Connector::~Connector()
 {
-	bufferevent_free(bev_);
+    if (bev_ != NULL)
+    {
+        bufferevent_free(bev_);
+    }	
 }
 
 void Connector::start()
