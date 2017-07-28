@@ -8,8 +8,8 @@ target_link_libraries(ThreadPool_test base)
 add_executable(Config_test Config_test.cc)
 target_link_libraries(Config_test base)
 
-add_executable(UniqueIdGenerator_test UniqueIdGenerator_test.cc)
-target_link_libraries(UniqueIdGenerator_test base)
+add_executable(IdWorker_test IdWorker_test.cc)
+target_link_libraries(IdWorker_test base)
 
 add_executable(any_test any_test.cc)
 
