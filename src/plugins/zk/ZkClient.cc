@@ -402,73 +402,84 @@ bool ZkClient::isValidPath(const std::string& path) const
 void ZkClient::handleCreateEvent(const std::string& path) 
 {
     LOG_INFO << "handleCreateEvent: path=[" << path << "]";
-    assert(nodeCreatedCallback_);
-    assert(nodeDeletedCallback_);
+    if (nodeCreatedCallback_)
+    {
+        nodeCreatedCallback_(path);
+    }
+   
     bool isExist;
     ErrorCode ret = existWrapper(path, true, &isExist);
-    if (ret == kOk)
+    if (ret == kOk && !isExist)
     {          
-        nodeCreatedCallback_(path);
-        if (!isExist)
-        {
-            nodeDeletedCallback_(path);
-        }       
+        LOG_WARN << "node not exist" << path;
     }
 }
 
 void ZkClient::handleDeleteEvent(const std::string& path)
 {
     LOG_INFO << "handleDeleteEvent: path=[" << path << "]";
-    assert(nodeCreatedCallback_);
-    assert(nodeDeletedCallback_);
+    if (nodeDeletedCallback_)
+    {
+        nodeDeletedCallback_(path);
+    }
+
     bool isExist;
     ErrorCode ret = existWrapper(path, true, &isExist);
-    if (ret == kOk) 
+    if (ret == kOk && isExist) 
     {      
-        nodeDeletedCallback_(path);
-        if (isExist) 
-        {
-            nodeCreatedCallback_(path);
-        }      
-    }
-    else 
-    {             
-        nodeDeletedCallback_(path);
+        LOG_WARN << "node exist: " << path;
     }
 }
 
 void ZkClient::handleChangeEvent(const std::string& path)
 {
     LOG_INFO << "handleChangeEvent: path=[" << path << "]";
-    assert(nodeDataChangedCallback_);
     std::string data;
     ErrorCode ret = getWrapper(path, true, &data);
     if (ret == kOk)
     {
-        nodeDataChangedCallback_(path, data);
+        if (nodeDataChangedCallback_)
+        {
+            nodeDataChangedCallback_(path, data);
+        }      
     }
     else if (ret == kNotExist)
     {
-        nodeDeletedCallback_(path);      
+        if (nodeDeletedCallback_)
+        {
+            nodeDeletedCallback_(path);
+        }       
+    }
+    else
+    {
+        LOG_WARN << "unknow node status: " << path;
     }
 }
 
 void ZkClient::handleChildEvent(const std::string& path)
 {
     LOG_INFO << "handleChildEvent: path=[" << path << "]";
-    assert(childrenChangedCallback_);
-    assert(nodeDeletedCallback_);
     std::vector<std::string> childList;
     std::vector<std::string> dataList;
     ErrorCode ret = getChildrenWrapper(path, true, &childList, &dataList);
     if (ret == kOk)
     {
-        childrenChangedCallback_(path, childList, dataList);
+        if (childrenChangedCallback_)
+        {
+            childrenChangedCallback_(path, childList, dataList);
+        }       
     }
     else if (ret == kNotExist)
-    {       
-        nodeDeletedCallback_(path);
-    }  
+    {     
+        if (nodeDeletedCallback_)
+        {
+            nodeDeletedCallback_(path);
+        }       
+    }
+    else
+    {
+        LOG_WARN << "unknow child event";
+    }
 }
 
 void ZkClient::handleWatchLostEvent(int state, const std::string& path)
@@ -536,6 +547,7 @@ ErrorCode ZkClient::getWrapper(const std::string& path, bool watch, std::string*
     {
         LOG_WARN << "zoo_get fail : " << zerror(ret);
     }
+
     delete[] buffer;
 
     switch (ret)
@@ -588,6 +600,7 @@ ErrorCode ZkClient::getChildrenWrapper(const std::string& path,
     {
         LOG_WARN << "zoo_get_children fail : " << zerror(ret);
     }
+
     deallocate_String_vector(&strVec);
 
     switch (ret)
