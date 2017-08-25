@@ -1,0 +1,2 @@
+ADD_EXECUTABLE(ZkClient_test ZkClient_test.cc)
+TARGET_LINK_LIBRARIES(ZkClient_test zk)
