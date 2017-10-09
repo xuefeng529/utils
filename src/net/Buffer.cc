@@ -28,6 +28,20 @@ Buffer::~Buffer()
 	}
 }
 
+void Buffer::append(const void* data, size_t len)
+{
+    if (evbuffer_add(buffer_, data, len) == -1)
+    {
+        LOG_ERROR << "evbuffer_add error: "
+            << evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
+    }
+}
+
+void Buffer::append(const char* data, size_t len)
+{
+    append(static_cast<const void*>(data), len);
+}
+
 void Buffer::append(const char* str)
 {
 	append(static_cast<const void*>(str), strlen(str));
@@ -38,41 +52,27 @@ void Buffer::append(const std::string& str)
 	append(static_cast<const void*>(str.data()), str.size());
 }
 
-void Buffer::append(const char* data, size_t len)
-{
-	append(static_cast<const void*>(data), len);
-}
-
-void Buffer::append(const void* data, size_t len)
-{
-	if (evbuffer_add(buffer_, data, len) == -1)
-	{
-		LOG_ERROR << "evbuffer_add error: "
-			<< evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR());
-	}
-}
-
 void Buffer::appendInt64(int64_t x)
 {
 	int64_t be64 = sockets::hostToNetwork64(x);
-	append(&be64, sizeof be64);
+	append(&be64, sizeof(be64));
 }
 
 void Buffer::appendInt32(int32_t x)
 {
 	int32_t be32 = sockets::hostToNetwork32(x);
-	append(&be32, sizeof be32);
+	append(&be32, sizeof(be32));
 }
 
 void Buffer::appendInt16(int16_t x)
 {
 	int16_t be16 = sockets::hostToNetwork16(x);
-	append(&be16, sizeof be16);
+	append(&be16, sizeof(be16));
 }
 
 void Buffer::appendInt8(int8_t x)
 {
-	append(&x, sizeof x);
+	append(&x, sizeof(x));
 }
 
 void Buffer::removeBuffer(Buffer* buffer)
@@ -92,32 +92,32 @@ void Buffer::appendBuffer(const Buffer& buffer)
 	append(data);
 }
 
+void Buffer::prepend(const void* data, size_t len)
+{
+    evbuffer_prepend(buffer_, data, len);
+}
+
 void Buffer::prependInt64(int64_t x)
 {
 	int64_t be64 = sockets::hostToNetwork64(x);
-	prepend(&be64, sizeof be64);
+	prepend(&be64, sizeof(be64));
 }
 
 void Buffer::prependInt32(int32_t x)
 {
 	int32_t be32 = sockets::hostToNetwork32(x);
-	prepend(&be32, sizeof be32);
+	prepend(&be32, sizeof(be32));
 }
 
 void Buffer::prependInt16(int16_t x)
 {
 	int16_t be16 = sockets::hostToNetwork16(x);
-	prepend(&be16, sizeof be16);
+	prepend(&be16, sizeof(be16));
 }
 
 void Buffer::prependInt8(int8_t x)
 {
-	prepend(&x, sizeof x);
-}
-
-void Buffer::prepend(const void* data, size_t len)
-{
-	evbuffer_prepend(buffer_, data, len);
+	prepend(&x, sizeof(x));
 }
 
 size_t Buffer::length() const
@@ -154,32 +154,65 @@ int8_t Buffer::readInt8()
 }
 
 int64_t Buffer::peekInt64() const
-{
-	assert(length() >= sizeof(int64_t));
-	int64_t be64 = 0;
-	evbuffer_copyout(buffer_, &be64, sizeof(be64));
+{	
+    if (length() < sizeof(int64_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
+    int64_t be64 = 0;
+    evbuffer_copyout(buffer_, &be64, sizeof(be64));
 	return sockets::networkToHost64(be64);
 }
 
 int32_t Buffer::peekInt32() const
 {
-	assert(length() >= sizeof(int32_t));
-	int32_t be32 = 0;
-	evbuffer_copyout(buffer_, &be32, sizeof(be32));
+    if (length() < sizeof(int32_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+	
+    int32_t be32 = 0;
+    evbuffer_copyout(buffer_, &be32, sizeof(be32));
 	return sockets::networkToHost32(be32);
 }
 
 int16_t Buffer::peekInt16() const
 {
-	assert(length() >= sizeof(int16_t));
+    if (length() < sizeof(int16_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
 	int16_t be16 = 0;
 	evbuffer_copyout(buffer_, &be16, sizeof(be16));
 	return sockets::networkToHost16(be16);
 }
 
+int8_t Buffer::peekInt8() const
+{
+    if (length() < sizeof(int8_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
+    int8_t be8 = 0;
+    evbuffer_copyout(buffer_, &be8, sizeof(be8));
+    return be8;
+}
+
 int64_t Buffer::peekInt64WithOriginalEndian() const
 {
-	assert(length() >= sizeof(int64_t));
+    if (length() < sizeof(int64_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
 	int64_t be64 = 0;
 	evbuffer_copyout(buffer_, &be64, sizeof(be64));
 	return be64;
@@ -187,7 +220,12 @@ int64_t Buffer::peekInt64WithOriginalEndian() const
 
 int32_t Buffer::peekInt32WithOriginalEndian() const
 {
-	assert(length() >= sizeof(int32_t));
+    if (length() < sizeof(int32_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
 	int32_t be32 = 0;
 	evbuffer_copyout(buffer_, &be32, sizeof(be32));
 	return be32;
@@ -195,7 +233,12 @@ int32_t Buffer::peekInt32WithOriginalEndian() const
 
 int16_t Buffer::peekInt16WithOriginalEndian() const
 {
-	assert(length() >= sizeof(int16_t));
+    if (length() < sizeof(int16_t))
+    {
+        LOG_ERROR << "invalid buffer length";
+        return -1;
+    }
+
 	int16_t be16 = 0;
 	evbuffer_copyout(buffer_, &be16, sizeof(be16));
 	return be16;
@@ -222,36 +265,38 @@ int16_t Buffer::readInt16WithOriginalEndian()
 	return result;
 }
 
-int8_t Buffer::peekInt8() const
+void Buffer::appendInt64WithOriginalEndian(int64_t x)
 {
-	assert(length() >= sizeof(int8_t));
-	int8_t be8 = 0;
-	evbuffer_copyout(buffer_, &be8, sizeof(be8));
-	return be8;
+    append(&x, sizeof(x));
 }
 
-void Buffer::peekAsBytes(char* buf, size_t len) const
+void Buffer::appendInt32WithOriginalEndian(int32_t x)
 {
-	assert(len <= length());
-	evbuffer_copyout(buffer_, buf, len);
+    append(&x, sizeof(x));
 }
 
-void Buffer::peekAllAsString(std::string* ret) const
+void Buffer::appendInt16WithOriginalEndian(int16_t x)
 {
-	return peekAsString(length(), ret);
+    append(&x, sizeof(x));
 }
 
-void Buffer::peekAsString(size_t len, std::string* ret) const
+void Buffer::prependInt64WithOriginalEndian(int64_t x)
 {
-	assert(len <= length());
-	ret->clear();
-	ret->resize(len);
-	evbuffer_copyout(buffer_, &*ret->begin(), ret->size());
+    prepend(&x, sizeof(x));
+}
+
+void Buffer::prependInt32WithOriginalEndian(int32_t x)
+{
+    prepend(&x, sizeof(x));
+}
+
+void Buffer::prependInt16WithOriginalEndian(int16_t x)
+{
+    prepend(&x, sizeof(x));
 }
 
 void Buffer::retrieve(size_t len)
 {
-	assert(len <= length());
 	if (len < length())
 	{
 		evbuffer_drain(buffer_, len);
@@ -287,24 +332,26 @@ void Buffer::Buffer::retrieveAll()
 	evbuffer_drain(buffer_, evbuffer_get_length(buffer_));
 }
 
-void Buffer::retrieveAllAsString(std::string* ret)
+void Buffer::retrieveAsBytes(char* buf, size_t len)
 {
-	return retrieveAsString(length(), ret);
+    if (length() < len)
+    {
+        LOG_ERROR << "invalid buffer length";
+        return;
+    }
+
+    evbuffer_remove(buffer_, buf, len);
 }
 
 void Buffer::retrieveAsString(size_t len, std::string* ret)
 {
-	assert(len <= length());
-	ret->clear();
-	ret->resize(len);
-	evbuffer_copyout(buffer_, &*ret->begin(), ret->size());
-	retrieve(len);
+    ret->resize(len);
+    retrieveAsBytes(&*ret->begin(), ret->size());
 }
 
-void Buffer::retrieveAsBytes(char* buf, size_t len)
+void Buffer::retrieveAllAsString(std::string* ret)
 {
-	assert(len <= length());
-	evbuffer_remove(buffer_, buf, len);
+	return retrieveAsString(length(), ret);
 }
 
 bool Buffer::readLine(std::string* ret)
@@ -315,10 +362,31 @@ bool Buffer::readLine(std::string* ret)
 		return false;
 	}
 
-	ret->clear();
 	*ret = line;
 	free(line);
 	return true;
+}
+
+void Buffer::peekAsBytes(char* buf, size_t len) const
+{
+    if (length() < len)
+    {
+        LOG_ERROR << "invalid buffer length";
+        return;
+    }
+
+    evbuffer_copyout(buffer_, buf, len);
+}
+
+void Buffer::peekAsString(size_t len, std::string* ret) const
+{
+    ret->resize(len);
+    peekAsBytes(&*ret->begin(), ret->size());
+}
+
+void Buffer::peekAllAsString(std::string* ret) const
+{
+    return peekAsString(length(), ret);
 }
 
 } // namespace net

@@ -23,18 +23,21 @@ public:
 	Buffer(struct evbuffer* buffer);
 	~Buffer();
 
+    void append(const void* data, size_t len);
+    void append(const char* data, size_t len);
 	void append(const char* str);
 	void append(const std::string& str);
-	void append(const char* data, size_t len);
-	void append(const void* data, size_t len);
+	
 	/// Append using network endian
 	void appendInt64(int64_t x);
 	void appendInt32(int32_t x);
 	void appendInt16(int16_t x);
 	void appendInt8(int8_t x);
+
 	/// 尽量减少复制,函数调用后buffer中的数据被移走
 	void removeBuffer(Buffer* buffer);
 	void removeBuffer(Buffer* buffer, size_t len);
+
 	void appendBuffer(const Buffer& buffer);
 
 	void prepend(const void* data, size_t len);
@@ -58,7 +61,6 @@ public:
 	int32_t peekInt32() const;
 	int16_t peekInt16() const;
 	int8_t peekInt8() const;
-	void peekAsBytes(char* buf, size_t len) const;
 	
 	/// Peek from OriginalEndian
 	int64_t peekInt64WithOriginalEndian() const;
@@ -69,19 +71,28 @@ public:
 	int32_t readInt32WithOriginalEndian();
 	int16_t readInt16WithOriginalEndian();
 
+    void appendInt64WithOriginalEndian(int64_t x);
+    void appendInt32WithOriginalEndian(int32_t x);
+    void appendInt16WithOriginalEndian(int16_t x);
+
+    void prependInt64WithOriginalEndian(int64_t x);
+    void prependInt32WithOriginalEndian(int32_t x);
+    void prependInt16WithOriginalEndian(int16_t x);
+
 	void retrieve(size_t len);
 	void retrieveInt64();
 	void retrieveInt32();
 	void retrieveInt16();
 	void retrieveInt8();
 	void retrieveAll();
+    void retrieveAsBytes(char* buf, size_t len);
+    void retrieveAsString(size_t len, std::string* ret);
 	void retrieveAllAsString(std::string* ret);
-	void retrieveAsString(size_t len, std::string* ret);
-	void retrieveAsBytes(char* buf, size_t len);
-
+	
 private:
-	void peekAllAsString(std::string* ret) const;
+    void peekAsBytes(char* buf, size_t len) const;	
 	void peekAsString(size_t len, std::string* ret) const;
+    void peekAllAsString(std::string* ret) const;
 
 	struct evbuffer* buffer_;
 	bool bufferOwner_;
