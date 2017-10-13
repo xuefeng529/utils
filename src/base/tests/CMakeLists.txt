@@ -42,3 +42,6 @@ target_link_libraries(base_Buffer_test base)
 
 add_executable(Regex_test Regex_test.cc)
 target_link_libraries(Regex_test base)
+
+add_executable(LockFree_test LockFree_test.cc)
+target_link_libraries(LockFree_test base)
