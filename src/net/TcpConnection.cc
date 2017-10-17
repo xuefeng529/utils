@@ -38,8 +38,7 @@ void TcpConnection::handleWrite(struct bufferevent *bev, void *ctx)
 	assert(conn->outputBuffer_->length() == 0);
     if (conn->state_ == kConnected && conn->writeCompleteCallback_)
 	{
-        conn->getLoop()->queueInLoop(
-            boost::bind(conn->writeCompleteCallback_, conn->shared_from_this()));    
+        conn->writeCompleteCallback_(conn->shared_from_this());   
 	}
 
 	if (conn->state_ == kDisconnecting)

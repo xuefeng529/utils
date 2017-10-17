@@ -1,9 +1,11 @@
 #ifndef NET_EVENTLOOP_H
 #define NET_EVENTLOOP_H
 
+#include "base/LockFree.h"
 #include "base/Mutex.h"
 #include "base/Timestamp.h"
 #include "base/Atomic.h"
+#include "net/config.h"
 #include "net/Timer.h"
 
 #include <boost/noncopyable.hpp>
@@ -11,6 +13,15 @@
 #include <boost/scoped_ptr.hpp>
 #include <vector>
 
+#include <linux/version.h>
+
+#ifdef EVENT_LOOP_QUEUE_SIZE
+const uint32_t kEventLoopQueueSize = EVENT_LOOP_QUEUE_SIZE;
+#else
+const uint32_t kEventLoopQueueSize = 10000000;
+#endif
+
+struct event;
 struct event_base;
 struct bufferevent;
 
@@ -65,10 +76,19 @@ private:
 
 	struct event_base* base_;
 	const pid_t threadId_;
-	base::MutexLock mutex_;
-	std::vector<Functor> pendingFunctors_;
+	//base::MutexLock mutex_;
+	//std::vector<Functor> pendingFunctors_;
+    typedef base::lockfree::ArrayLockFreeQueue<Functor, kEventLoopQueueSize> PendingFunctorQueue;
+    boost::scoped_ptr<PendingFunctorQueue> pendingFunctors_;
 	boost::scoped_ptr<TimerQueue> timerQueue_;
-	struct bufferevent* wakeupPair_[2];
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)
+    static void handleRead(evutil_socket_t fd, short events, void* ctx);
+    int wakeupFd_;
+    event* wakeupEvent_;
+#else
+    struct bufferevent* wakeupPair_[2];
+#endif
 };
 
 } // namespace net
