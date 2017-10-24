@@ -34,6 +34,7 @@ int createEventfd()
 
 void EventLoop::handleRead(evutil_socket_t fd, short events, void* ctx)
 {
+    LOG_DEBUG << "handle pending event";
     assert(ctx != NULL);
     EventLoop* loop = static_cast<EventLoop*>(ctx);
     uint64_t one = 1;

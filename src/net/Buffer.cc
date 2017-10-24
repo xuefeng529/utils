@@ -332,24 +332,25 @@ void Buffer::Buffer::retrieveAll()
 	evbuffer_drain(buffer_, evbuffer_get_length(buffer_));
 }
 
-void Buffer::retrieveAsBytes(char* buf, size_t len)
+bool Buffer::retrieveAsBytes(char* buf, size_t len)
 {
     if (length() < len)
     {
         LOG_ERROR << "invalid buffer length";
-        return;
+        return false;
     }
 
     evbuffer_remove(buffer_, buf, len);
+    return true;
 }
 
-void Buffer::retrieveAsString(size_t len, std::string* ret)
+bool Buffer::retrieveAsString(size_t len, std::string* ret)
 {
     ret->resize(len);
-    retrieveAsBytes(&*ret->begin(), ret->size());
+    return retrieveAsBytes(&*ret->begin(), ret->size());
 }
 
-void Buffer::retrieveAllAsString(std::string* ret)
+bool Buffer::retrieveAllAsString(std::string* ret)
 {
 	return retrieveAsString(length(), ret);
 }

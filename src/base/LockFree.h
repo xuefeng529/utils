@@ -1,6 +1,8 @@
 #ifndef BASE_LOCKFREE_H
 #define BASE_LOCKFREE_H
 
+#include <utility>
+
 #include <stdint.h>
 #include <sched.h>
 #include <assert.h>
@@ -258,7 +260,8 @@ bool ArrayLockFreeQueue<ELEM_T, Q_SIZE>::pop(ELEM_T &a_data)
         }
 
         // retrieve the data from the queue
-        a_data = m_theQueue[countToIndex(currentReadIndex)];
+        //a_data = m_theQueue[countToIndex(currentReadIndex)];
+        std::swap(a_data, m_theQueue[countToIndex(currentReadIndex)]);
 
         // try to perfrom now the CAS operation on the read index. If we succeed
         // a_data already contains what m_readIndex pointed to before we 
@@ -471,7 +474,8 @@ bool ArrayLockFreeQueueSingleProducer<ELEM_T, Q_SIZE>::pop(ELEM_T &a_data)
         }
 
         // retrieve the data from the queue
-        a_data = m_theQueue[countToIndex(currentReadIndex)];
+        //a_data = m_theQueue[countToIndex(currentReadIndex)];
+        std::swap(a_data, m_theQueue[countToIndex(currentReadIndex)]);
 
         // try to perfrom now the CAS operation on the read index. If we succeed
         // a_data already contains what m_readIndex pointed to before we 

@@ -85,9 +85,9 @@ public:
 	void retrieveInt16();
 	void retrieveInt8();
 	void retrieveAll();
-    void retrieveAsBytes(char* buf, size_t len);
-    void retrieveAsString(size_t len, std::string* ret);
-	void retrieveAllAsString(std::string* ret);
+    bool retrieveAsBytes(char* buf, size_t len);
+    bool retrieveAsString(size_t len, std::string* ret);
+	bool retrieveAllAsString(std::string* ret);
 	
 private:
     void peekAsBytes(char* buf, size_t len) const;	

@@ -6,9 +6,11 @@
 #include <boost/bind.hpp>
 #include <iostream>
 
-const int64_t kProduceSize = 100000000;
+#include <sched.h>
 
-base::lockfree::ArrayLockFreeQueue<int64_t, 1000000>  theQueue;
+const int64_t kProduceSize = 1000000;
+
+base::lockfree::ArrayLockFreeQueue<int64_t, 10000>  theQueue;
 
 void produceThread()
 {
@@ -16,7 +18,15 @@ void produceThread()
     int64_t n = 0;
     while (n < kProduceSize)
     {
-        theQueue.push(n++);
+        if (theQueue.push(n))
+        {
+            LOG_INFO << "push " << n;
+            n++;
+        }
+        else
+        {
+            sched_yield();
+        }
     }
     LOG_INFO << "produce done: tid = " << base::CurrentThread::tid();
 }
@@ -28,8 +38,15 @@ void consumeThread()
     int64_t v;
     while (n < kProduceSize * 2)
     {
-        theQueue.pop(v);
-        n++;
+        if (theQueue.pop(v))
+        {
+            LOG_INFO << "pop " << v;
+            n++;
+        }  
+        else
+        {
+            sched_yield();
+        }
     }
     
     LOG_INFO << "consume done: tid = " << base::CurrentThread::tid();
