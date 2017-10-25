@@ -18,12 +18,12 @@
 using namespace base;
 using namespace net;
 
-char g_text[3*1024];
+char g_text[4*1024];
 
 class EchoClient;
-boost::ptr_vector<EchoClient> clients;
-int current = 0;
-base::AtomicInt32 numConn;
+boost::ptr_vector<EchoClient> g_clients;
+int g_current = 0;
+base::AtomicInt32 g_numConns;
 
 class EchoClient : boost::noncopyable
 {
@@ -33,7 +33,8 @@ public:
 		       const std::string& id,
 		       uint64_t heartbeat)
 		: loop_(loop),
-		  client_(loop, listenAddr, "EchoClient" + id, heartbeat)
+		  client_(loop, listenAddr, "EchoClient" + id, heartbeat),
+          numBytes_(0)
 	{
 		client_.setConnectionCallback(
 			boost::bind(&EchoClient::onConnection, this, _1));
@@ -43,7 +44,7 @@ public:
 			boost::bind(&EchoClient::onWriteComplete, this, _1));
 		client_.setHearbeatCallback(
 			boost::bind(&EchoClient::onHeartbeat, this, _1));
-		//client_.enableRetry();
+		client_.enableRetry();
 	}
 
 	void connect()
@@ -59,46 +60,50 @@ public:
 private:
 	void onConnection(const TcpConnectionPtr& conn)
 	{
-		/*LOG_DEBUG << conn->localAddress().toIpPort() << " -> "
-			<< conn->peerAddress().toIpPort() << " is "
-			<< (conn->connected() ? "UP" : "DOWN");*/
+        LOG_DEBUG << conn->localAddress().toIpPort() << " -> "
+            << conn->peerAddress().toIpPort() << " is "
+            << (conn->connected() ? "UP" : "DOWN");
 		
 		if (conn->connected())
-		{			
-			conn->send(g_text, sizeof(g_text));            
-			++current;
-			if (static_cast<size_t>(current) < clients.size())
-			{
-				clients[current].connect();
-			}						
-		}		
+		{		
+            LOG_INFO << "the number of connections: " << g_numConns.incrementAndGet();
+            conn->setContext(g_current);
+            conn->send(g_text, sizeof(g_text));
+            ++g_current;
+            if (static_cast<size_t>(g_current) < g_clients.size())
+            {
+                g_clients[g_current].connect();
+            }
+            //conn->close();           
+		}	
+        else
+        {
+            LOG_INFO << "the number of connections: " << g_numConns.decrementAndGet();
+        }
 	}
-
-    void send(const TcpConnectionPtr& conn, const std::string& message)
-    {
-        conn->send(message);
-    }
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";				
+		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";        
 		std::string msg;
-		buffer->retrieveAllAsString(&msg);       
+        buffer->retrieveAllAsString(&msg);
+        assert(buffer->length() == 0);
+        conn->send(msg);
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
-        LOG_INFO << "onWriteComplete[" << conn->name() << "]";       		
-        conn->send(g_text, sizeof(g_text));		
+       // LOG_INFO << "onWriteComplete [" << conn->name() << "]";       		
 	}
 
 	void onHeartbeat(const net::TcpConnectionPtr& conn)
 	{
 		LOG_INFO << "onHeartbeat";		
 	}
-
+    
 	EventLoop* loop_;
 	TcpClient client_;
+    int64_t numBytes_;
 };
 
 int main(int argc, char* argv[])
@@ -118,19 +123,19 @@ int main(int argc, char* argv[])
 			n = atoi(argv[3]);
 		}
 
-		clients.reserve(n);
-		for (int i = 0; i < n; ++i)
-		{
-			char buf[32];
-			snprintf(buf, sizeof buf, "%d", i + 1);
-			clients.push_back(new EchoClient(&loop, serverAddr, buf, 0));
-		}
+        g_clients.reserve(n);
+        for (int i = 0; i < n; ++i)
+        {
+            char buf[32];
+            snprintf(buf, sizeof buf, "%d", i + 1);
+            g_clients.push_back(new EchoClient(&loop, serverAddr, buf, 0));
+        }
 
-		clients[current].connect();
+        g_clients[g_current].connect();
 		loop.loop();
 	}
 	else
 	{
-		LOG_INFO << "Usage: " << argv[0] << " host_ip[current#]";
+		LOG_INFO << "Usage: " << argv[0] << " ip port";
 	}
 }

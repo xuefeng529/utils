@@ -5,6 +5,8 @@
 #include "base/ThreadPool.h"
 #include "base/Atomic.h"
 #include "base/daemon.h"
+#include "base/ProcessInfo.h"
+#include "base/StringUtil.h"
 #include "net/TcpServer.h"
 #include "net/EventLoop.h"
 #include "net/InetAddress.h"
@@ -18,35 +20,32 @@
 
 net::EventLoop* g_loop;
 
-int numThreads = 0;
-base::AtomicInt32 numConn;
-const size_t kBufferLen = 4 * 1024;
-char g_text[kBufferLen];
+int g_numIoThreads = 0;
+base::AtomicInt64 g_numConns;
 
 typedef boost::weak_ptr<net::TcpConnection> WeakTcpConnectionPtr;
 
-base::ThreadPool threads;
+boost::scoped_ptr<base::ThreadPool> theTaskHandler;
 
-void handleTask(const WeakTcpConnectionPtr& weakConn, const std::string& msg)
+void handleTask(const WeakTcpConnectionPtr& weakConn, net::BufferPtr& msg)
 {
-	net::TcpConnectionPtr conn(weakConn.lock());
-	if (conn)
+	net::TcpConnectionPtr connGuard(weakConn.lock());
+    if (connGuard)
 	{
-		//LOG_DEBUG << "handleTask";
-		conn->send(msg);
+        //LOG_INFO << "handle sending task: " << msg->length() << " bytes [" << connGuard->name() << "]";
+        connGuard->send(msg);
 	}
 }
 
 class EchoServer
 {
 public:
-	struct Entry
-	{
-		size_t numBytes;
-		int cnt;
-	};
-
-	typedef boost::shared_ptr<Entry> EntryPtr;
+    typedef struct Context 
+    {
+        std::string connName;
+        size_t totalBytes;
+        size_t numWriteComplte;
+    } Context;
 
 	EchoServer(net::EventLoop* loop, const net::InetAddress& listenAddr, time_t readIdle)
 		: loop_(loop),
@@ -58,9 +57,7 @@ public:
 			boost::bind(&EchoServer::onMessage, this, _1, _2));
 		server_.setWriteCompleteCallback(
 			boost::bind(&EchoServer::onWriteComplete, this, _1));
-		/*server_.setReadTimeoutCallback(
-			boost::bind(&EchoServer::onReadTimeout, this, _1));*/
-		server_.setThreadNum(numThreads);
+        server_.setThreadNum(g_numIoThreads);
 	}
 
 	void start()
@@ -74,44 +71,60 @@ private:
 		/*LOG_INFO << conn->peerAddress().toIpPort() << " -> "
 			<< conn->localAddress().toIpPort() << " is "
 			<< (conn->connected() ? "UP" : "DOWN");*/
-
 		//LOG_INFO << conn->name() << " is " << (conn->connected() ? "UP" : "DOWN");
-		if (!conn->connected())
+		if (conn->connected())
 		{
-			LOG_INFO << "Connection number: " << numConn.decrementAndGet();			
+            LOG_INFO << "the number of connections: " << g_numConns.incrementAndGet();
+            char buf[64];
+            snprintf(buf, sizeof(buf), "conn_%"PRId32, connId_.incrementAndGet());
+            Context ctx = { buf, 0, 0 };
+            conn->setContext(ctx);          
 		}
 		else
-		{
-            LOG_INFO << "Connection number: " << numConn.incrementAndGet();
+		{                        
+            LOG_INFO << "the number of connections: " << g_numConns.decrementAndGet();
+            const Context& ctx = boost::any_cast<Context>(conn->getContext());
+            LOG_INFO << "total bytes: " << ctx.totalBytes << " write complete: " << ctx.numWriteComplte
+                << " [" << ctx.connName << "]";
 		}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{		
-		net::BufferPtr sendBuffer(new net::Buffer());
-		sendBuffer->removeBuffer(buffer);
-		assert(buffer->length() == 0);
-		conn->send(sendBuffer);		
+        Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
+        ctx->totalBytes += buffer->length();
+        /*LOG_INFO << "total bytes: " << ctx->totalBytes << " write complete: " << ctx->numWriteComplte
+            << " [" << ctx->connName << "]";*/
+        net::BufferPtr sendBuffer(new net::Buffer());
+        sendBuffer->removeBuffer(buffer);
+        assert(buffer->length() == 0);
+        if (theTaskHandler)
+        {
+            theTaskHandler->run(boost::bind(handleTask, conn, sendBuffer));
+        }
+        else
+        {    
+            LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+            conn->send(sendBuffer);
+        }				
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
-		//LOG_INFO << "onWriteComplete" << "[" << conn->name() << "]"		
+        //LOG_INFO << "onWriteComplete " << "[" << conn->name() << "]";
+        Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
+        ctx->numWriteComplte += 1;
+        /*LOG_INFO << "total bytes: " << ctx->totalBytes << " write complete: " << ctx->numWriteComplte
+            << " [" << ctx->connName << "]";*/
 	}
 
-    void onReadTimeout(const net::TcpConnectionPtr& conn)
-    {
-        //LOG_INFO << conn->name() << ": onReadTimeout";
-    }
-
+    base::AtomicInt32 connId_;
 	net::EventLoop* loop_;
 	net::TcpServer server_;
 };
 
-int kRollSize = 500 * 1000 * 1000;
-
+const int kRollSize = 1000 * 1000 * 1000;
 base::AsyncLogging* g_asyncLog = NULL;
-
 void asyncOutput(const char* msg, int len)
 {
 	g_asyncLog->append(msg, len);
@@ -121,23 +134,29 @@ int main(int argc, char* argv[])
 {
 	if (argc > 2)
 	{
-		numThreads = atoi(argv[2]);
+        g_numIoThreads = atoi(argv[2]);
 	}
+
+    if (argc > 3)
+    {
+        theTaskHandler.reset(new base::ThreadPool());
+        theTaskHandler->start(atoi(argv[3]));
+    }
 
 	char name[256];
 	strncpy(name, argv[0], 256);
-	//base::AsyncLogging log(::basename(name), kRollSize);
+    base::Logger::setLogLevel(base::Logger::INFO);
+    LOG_INFO << base::ProcessInfo::exePath() << " " << ::basename(name);
+    base::AsyncLogging log(base::StringUtil::extractDirname(base::ProcessInfo::exePath()), ::basename(name), kRollSize);
+    g_asyncLog = &log;
 	//log.start();
-	//g_asyncLog = &log
-	base::Logger::setLogLevel(base::Logger::INFO);
 	//base::Logger::setOutput(asyncOutput);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
-	memset(g_text, 's', sizeof(g_text));
 	net::EventLoop loop;	
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-	EchoServer server(&loop, listenAddr, 0);
+	EchoServer server(&loop, listenAddr, 30);
 	server.start();
 	loop.loop();
-	//log.stop();
+	log.stop();
     LOG_INFO << "done .";
 }

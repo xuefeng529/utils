@@ -303,14 +303,23 @@ void EventLoop::doPendingFunctors()
     {
     functors[i]();
     }*/
-    Functor functor;
-    while (pendingFunctors_->pop(functor))
+    do 
     {
+        Functor functor;
+        if (!pendingFunctors_->pop(functor))
+        {
+            break;
+        }
+
         if (functor)
         {
             functor();
         }
-    }
+        else
+        {
+            LOG_WARN << "pending functor null";
+        }      
+    } while (true);
 }
 
 } // namespace net
