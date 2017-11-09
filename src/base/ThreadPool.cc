@@ -86,12 +86,12 @@ void ThreadPool::run(const Task& task)
 ThreadPool::Task ThreadPool::take()
 {
   MutexLockGuard lock(mutex_);
-  // always use a while-loop, due to spurious wakeup
   if (queue_.empty())
   {
-      queue_.shrink_to_fit();
+      queue_.clear();
   }
 
+  // always use a while-loop, due to spurious wakeup
   while (queue_.empty() && running_)
   {
     notEmpty_.wait();
