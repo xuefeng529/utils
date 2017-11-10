@@ -88,7 +88,8 @@ ThreadPool::Task ThreadPool::take()
   MutexLockGuard lock(mutex_);
   if (queue_.empty())
   {
-      queue_.clear();
+      std::deque<Task> tmpQueue;
+      queue_.swap(tmpQueue);
   }
 
   // always use a while-loop, due to spurious wakeup
