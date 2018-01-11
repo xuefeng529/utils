@@ -8,14 +8,8 @@
 
 #include <strings.h>
 
-//#ifndef __STDC_FORMAT_MACROS
-//#define __STDC_FORMAT_MACROS
-//#endif
-
 #include <inttypes.h>
 
-namespace plugins
-{
 namespace redis
 {
 
@@ -642,4 +636,3 @@ Status Client::qtrim(const std::string& key, int64_t start, int64_t stop)
 }
 
 } // namespace redis
-} // namespace plugins

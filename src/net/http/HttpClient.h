@@ -19,10 +19,10 @@ class EventLoopThread;
 class HttpClient : boost::noncopyable
 {
 public:
-    HttpClient(SslContext* sslCtx = NULL);
+    HttpClient(bool keepalive = true, SslContext* sslCtx = NULL);
     ~HttpClient();
 
-    HttpResponse request(const std::string& url, HttpRequest::Method method = HttpRequest::kGet, bool keepalive = true);
+    HttpResponse request(const std::string& url, HttpRequest::Method method, const std::string& body = std::string());
 
 private:
     void handleConnection(const TcpConnectionPtr& conn, const HttpRequest& request);
@@ -35,6 +35,7 @@ private:
     boost::scoped_ptr<base::CountDownLatch> requestLatch_;
     boost::scoped_ptr<HttpResponse> response_;
     std::string lastHost_;
+    bool keepalive_;
     SslContext* sslCtx_;
 };
 

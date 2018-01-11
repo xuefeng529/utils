@@ -83,7 +83,7 @@ int main(int argc, char* argv[])
         {
             sslCtx.init(argv[2], argv[3], argv[4], "");
         }   
-        httpClient.reset(new net::HttpClient(&sslCtx));
+        httpClient.reset(new net::HttpClient(true, &sslCtx));
     }
 
     if (argc == 6)
@@ -96,12 +96,12 @@ int main(int argc, char* argv[])
         {
             sslCtx.init(argv[2], argv[3], argv[4], argv[5]);
         }
-        httpClient.reset(new net::HttpClient(&sslCtx));
+        httpClient.reset(new net::HttpClient(true, &sslCtx));
     }
 
     while (std::getline(std::cin, line) && line != "q")
     {
-        net::HttpResponse response = httpClient->request(line, net::HttpRequest::kGet, keepalive);
+        net::HttpResponse response = httpClient->request(line, net::HttpRequest::kGet);
         LOG_INFO << response.statusCode() << " " << response.statusMessage();
         LOG_INFO << "body:" << response.body();
     }

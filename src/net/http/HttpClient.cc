@@ -14,9 +14,10 @@
 namespace net
 {
 
-HttpClient::HttpClient(SslContext* sslCtx)
+HttpClient::HttpClient(bool keepalive, SslContext* sslCtx)
     : loopThread_(new EventLoopThread()),
       loop_(loopThread_->startLoop()),
+      keepalive_(keepalive),
       sslCtx_(sslCtx)
 {
     assert(loop_ != NULL);
@@ -26,7 +27,7 @@ HttpClient::~HttpClient()
 {
 }
 
-HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method method, bool keepalive)
+HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method method, const std::string& body)
 {
     struct http_parser_url u;
     if (http_parser_parse_url(url.c_str(), url.size(), 0, &u) != 0)
@@ -89,8 +90,9 @@ HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method met
     request.setPath(path);
     request.setQuery(query);
     request.addHeader("Host", host);
-    request.setCloseConnection(!keepalive);
-    if (host != lastHost_ || !client_ || !client_->isConnected() || !keepalive)
+    request.setCloseConnection(!keepalive_);
+    request.setBody(body);
+    if (host != lastHost_ || !client_ || !client_->isConnected() || !keepalive_)
     {
         client_.reset(new TcpClient(loop_, serverAddr, "HttpClient", 0, sslCtx_));
         client_->setConnectionCallback(
@@ -121,6 +123,14 @@ void HttpClient::handleConnection(const TcpConnectionPtr& conn, const HttpReques
         BufferPtr buffer(new Buffer());
         request.appendToBuffer(buffer.get());
         conn->send(buffer);
+    }
+    else
+    {
+        if (requestLatch_ && requestLatch_->getCount() > 0)
+        {
+            response_.reset(new HttpResponse());
+            requestLatch_->countDown();
+        }
     }
 }
 

@@ -11,8 +11,6 @@
 
 struct redisContext;
 
-namespace plugins
-{
 namespace redis
 {
 
@@ -108,6 +106,5 @@ private:
 };
 
 } // namespace redis
-} // namespace plugins
 
 #endif // PLUGINS_REDIS_CLIENT_H
