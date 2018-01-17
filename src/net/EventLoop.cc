@@ -242,7 +242,7 @@ void EventLoop::queueInLoop(const Functor& cb)
         }*/
 	while (!pendingFunctors_->push(cb))
 	{
-        LOG_DEBUG << "pending functors queue is full";
+        LOG_WARN << "pending functors queue is full";
         sched_yield();
 	}
 	

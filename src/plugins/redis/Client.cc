@@ -115,12 +115,18 @@ Status Client::expire(const std::string& key, int ttl)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "EXPIRE %s %d", key.c_str(), ttl));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "EXPIRE " << key << " " << ttl << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::del(const std::string& key)
@@ -128,12 +134,18 @@ Status Client::del(const std::string& key)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "DEL %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "DEL " << key << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::set(const std::string& key, const std::string& val)
@@ -141,12 +153,18 @@ Status Client::set(const std::string& key, const std::string& val)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "SET %s %s", key.c_str(), val.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "SET " << key << " " << val << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::setex(const std::string& key, const std::string& val, int ttl)
@@ -154,12 +172,18 @@ Status Client::setex(const std::string& key, const std::string& val, int ttl)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "SETEX %s %d %s", key.c_str(), ttl, val.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "SETEX " << key << " " << val << " " << ttl << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::get(const std::string& key, std::string* val)
@@ -168,6 +192,12 @@ Status Client::get(const std::string& key, std::string* val)
     assert(val != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "GET %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "GET " << key << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_STRING)
@@ -178,7 +208,7 @@ Status Client::get(const std::string& key, std::string* val)
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::incr(const std::string& key, int64_t incrby, int64_t* ret)
@@ -187,6 +217,12 @@ Status Client::incr(const std::string& key, int64_t incrby, int64_t* ret)
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "INCRBY %s %"PRId64, key.c_str(), incrby));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "INCRBY " << key << " " << incrby << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_INTEGER)
@@ -197,7 +233,7 @@ Status Client::incr(const std::string& key, int64_t incrby, int64_t* ret)
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::hset(const std::string& key, const std::string& field, const std::string& val)
@@ -205,12 +241,43 @@ Status Client::hset(const std::string& key, const std::string& field, const std:
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "HSET %s %s %s", key.c_str(), field.c_str(), val.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HSET " << key << " " << field << " " << val << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
+}
+
+Status Client::hmset(const std::string& key, const std::map<std::string, std::string>& fvs)
+{
+    assert(ctx_ != NULL);
+    std::stringstream ss;
+    std::map<std::string, std::string>::const_iterator it;
+    for (it = fvs.begin(); it != fvs.end(); ++it)
+    {
+        ss << " " << it->first << " " << it->second;
+    }
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "HMSET %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HMSET " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        freeReplyObject(reply);
+    }
+
+    return status;
 }
 
 Status Client::hget(const std::string& key, const std::string& field, std::string* val)
@@ -219,6 +286,12 @@ Status Client::hget(const std::string& key, const std::string& field, std::strin
     assert(val != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "HGET %s %s", key.c_str(), field.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HGET " << key << " " << field << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_STRING)
@@ -229,7 +302,43 @@ Status Client::hget(const std::string& key, const std::string& field, std::strin
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
+}
+
+Status Client::hmget(const std::string& key,
+                     const std::vector<std::string>& fields,
+                     std::vector<std::string>* ret)
+{
+    assert(ctx_ != NULL);
+    assert(ret != NULL);
+    std::stringstream ss;
+    std::vector<std::string>::const_iterator it;
+    for (it = fields.begin(); it != fields.end(); ++it)
+    {
+        ss << *it << " ";
+    }
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "HMGET %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HMGET " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_ARRAY)
+        {
+            for (size_t i = 0; i < reply->elements; i++)
+            {
+                ret->push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+            }
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
 }
 
 Status Client::hdel(const std::string& key, const std::string& field)
@@ -237,12 +346,43 @@ Status Client::hdel(const std::string& key, const std::string& field)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "HDEL %s %s", key.c_str(), field.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HDEL " << key << " " << field << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
+}
+
+Status Client::hdel(const std::string& key, const std::vector<std::string>& fields)
+{
+    assert(ctx_ != NULL);
+    std::stringstream ss;
+    std::vector<std::string>::const_iterator it;
+    for (it = fields.begin(); it != fields.end(); ++it)
+    {
+        ss << *it << " ";
+    }
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "HDEL %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HDEL " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        freeReplyObject(reply);
+    }
+
+    return status;
 }
 
 Status Client::hincr(const std::string& key, const std::string& field, int64_t incrby, int64_t* ret)
@@ -251,6 +391,12 @@ Status Client::hincr(const std::string& key, const std::string& field, int64_t i
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "HINCRBY %s %s %"PRId64, key.c_str(), field.c_str(), incrby));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HINCRBY " << key << " " << field << " " << incrby << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_INTEGER)
@@ -261,7 +407,7 @@ Status Client::hincr(const std::string& key, const std::string& field, int64_t i
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::hlen(const std::string& key, int64_t* ret)
@@ -269,6 +415,12 @@ Status Client::hlen(const std::string& key, int64_t* ret)
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "HLEN %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HLEN " << key << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_INTEGER)
@@ -279,19 +431,7 @@ Status Client::hlen(const std::string& key, int64_t* ret)
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
-}
-
-Status Client::hclear(const std::string& key)
-{
-    assert(ctx_ != NULL);
-    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "DEL %s", key.c_str()));
-    if (reply != NULL)
-    {
-        freeReplyObject(reply);
-    }
-
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::hkeys(const std::string& key, std::vector<std::string>* ret)
@@ -299,6 +439,12 @@ Status Client::hkeys(const std::string& key, std::vector<std::string>* ret)
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "HKEYS %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HKEYS " << key << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_ARRAY)
@@ -313,7 +459,7 @@ Status Client::hkeys(const std::string& key, std::vector<std::string>* ret)
         freeReplyObject(reply);        
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::hscan(const std::string& key,
@@ -326,15 +472,21 @@ Status Client::hscan(const std::string& key,
     assert(ctx_ != NULL);
     assert(nextCursor != NULL);
     assert(ret != NULL);
-    std::ostringstream oss;
-    oss << "HSCAN " << cursor;
+    std::stringstream ss;
+    ss << "HSCAN " << cursor;
     if (!pattern.empty())
     {
-        oss << " MATCH " << pattern;
+        ss << " MATCH " << pattern;
     }
 
-    oss << " COUNT " << count;
-    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, oss.str().c_str()));
+    ss << " COUNT " << count;
+    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << ss.str() << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {  
         if (reply->type == REDIS_REPLY_ARRAY)
@@ -342,7 +494,7 @@ Status Client::hscan(const std::string& key,
             ret->clear();
             if (reply->elements != 2)
             {
-                LOG_ERROR << oss.str();
+                LOG_ERROR << ss.str();
             }
 
             *nextCursor = base::StringUtil::strToUInt64(
@@ -357,75 +509,7 @@ Status Client::hscan(const std::string& key,
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
-}
-
-Status Client::hmset(const std::string& key, const std::map<std::string, std::string>& fvs)
-{
-    assert(ctx_ != NULL);
-    std::ostringstream oss;
-    std::map<std::string, std::string>::const_iterator it;
-    for (it = fvs.begin(); it != fvs.end(); ++it)
-    {
-        oss << " " << it->first << " " << it->second;
-    }
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "HMSET %s %s", key.c_str(), oss.str().c_str()));
-    if (reply != NULL)
-    {
-        freeReplyObject(reply);
-    }
-
-    return Status(ctx_);
-}
-
-Status Client::hmget(const std::string& key,
-                          const std::vector<std::string>& fields,
-                          std::vector<std::string>* ret)
-{
-    assert(ctx_ != NULL);
-    assert(ret != NULL);
-    std::ostringstream oss;
-    std::vector<std::string>::const_iterator it;
-    for (it = fields.begin(); it != fields.end(); ++it)
-    {
-        oss << *it << " ";
-    }
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "HMGET %s %s", key.c_str(), oss.str().c_str()));
-    if (reply != NULL)
-    {
-        if (reply->type == REDIS_REPLY_ARRAY)
-        {
-            for (size_t i = 0; i < reply->elements; i++)
-            {
-                ret->push_back(std::string(reply->element[i]->str, reply->element[i]->len));
-            }
-        }
-        
-        freeReplyObject(reply);
-    }
-
-    return Status(ctx_);
-}
-
-Status Client::hmdel(const std::string& key, const std::vector<std::string>& fields)
-{
-    assert(ctx_ != NULL);
-    std::ostringstream oss;
-    std::vector<std::string>::const_iterator it;
-    for (it = fields.begin(); it != fields.end(); ++it)
-    {
-        oss << *it << " ";
-    }
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "DEL %s %s", key.c_str(), oss.str().c_str()));
-    if (reply != NULL)
-    {
-        freeReplyObject(reply);
-    }
-
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::sadd(const std::string& key, const std::string& member)
@@ -433,32 +517,44 @@ Status Client::sadd(const std::string& key, const std::string& member)
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "SADD %s %s", key.c_str(), member.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "SADD " << key << " " << member << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::sadd(const std::string& key, const std::vector<std::string>& members)
 {
     assert(ctx_ != NULL);
     std::vector<std::string>::const_iterator it;
-    std::ostringstream oss;
+    std::stringstream ss;
     for (it = members.begin(); it != members.end(); ++it)
     {
-        oss << *it << " ";
+        ss << *it << " ";
     }
 
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "SADD %s %s", key.c_str(), oss.str().c_str()));
+        redisCommand(ctx_, "SADD %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "SADD " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::smembers(const std::string& key, std::vector<std::string>* ret)
@@ -467,6 +563,12 @@ Status Client::smembers(const std::string& key, std::vector<std::string>* ret)
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(
         ctx_, "SMEMBERS %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "SMEMBERS " << key << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_ARRAY)
@@ -480,7 +582,7 @@ Status Client::smembers(const std::string& key, std::vector<std::string>* ret)
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::sscan(const std::string& key,
@@ -493,15 +595,21 @@ Status Client::sscan(const std::string& key,
     assert(ctx_ != NULL);
     assert(nextCursor != NULL);
     assert(ret != NULL);
-    std::ostringstream oss;
-    oss << "SSCAN " << cursor;
+    std::stringstream ss;
+    ss << "SSCAN " << cursor;
     if (!pattern.empty())
     {
-        oss << " MATCH " << pattern;
+        ss << " MATCH " << pattern;
     }
 
-    oss << " COUNT " << count;
-    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, oss.str().c_str()));
+    ss << " COUNT " << count;
+    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << ss.str() << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_ARRAY)
@@ -509,7 +617,7 @@ Status Client::sscan(const std::string& key,
             ret->clear();
             if (reply->elements != 2)
             {
-                LOG_ERROR << oss.str();
+                LOG_ERROR << ss.str();
             }
 
             *nextCursor = base::StringUtil::strToUInt64(
@@ -524,7 +632,7 @@ Status Client::sscan(const std::string& key,
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 Status Client::zadd(const std::string& key, const std::string& member, int64_t score)
@@ -532,80 +640,58 @@ Status Client::zadd(const std::string& key, const std::string& member, int64_t s
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
         redisCommand(ctx_, "ZADD %s %"PRId64" %s", key.c_str(), score, member.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "ZADD " << key << " " << score << " " << member << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
-Status Client::qpush(const std::string& key, const std::string& val, int64_t* retSize)
+Status Client::zadd(const std::string& key, const std::map<std::string, int64_t>& mss)
 {
     assert(ctx_ != NULL);
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "RPUSH %s %s", key.c_str(), val.c_str()));
+    std::map<std::string, int64_t>::const_iterator it = mss.begin();
+    std::stringstream ss;
+    for (; it != mss.end(); ++it)
+    {
+        ss << it->second << " " << it->first << " ";
+    }
+
+    redisReply* reply = static_cast<redisReply*>(
+        redisCommand(ctx_, "ZADD %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "ZADD " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
-        if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
-        {
-            *retSize = reply->integer;
-        }
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
-Status Client::qpush(const std::string& key, const std::vector<std::string>& vals, int64_t* retSize)
-{
-    assert(ctx_ != NULL);
-    std::ostringstream oss;
-    std::vector<std::string>::const_iterator it;
-    for (it = vals.begin(); it != vals.end(); ++it)
-    {
-        oss << *it << " ";
-    }
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "RPUSH %s %s", key.c_str(), oss.str().c_str()));
-    if (reply != NULL)
-    {
-        if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
-        {
-            *retSize = reply->integer;
-        }
-
-        freeReplyObject(reply);
-    }
-
-    return Status(ctx_);
-}
-
-Status Client::qpop(const std::string& key, std::string* ret)
+Status Client::zrange(const std::string& key, int64_t start, int64_t stop, std::vector<std::string>* ret)
 {
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "LPOP %s", key.c_str()));
-    if (reply != NULL)
+        ctx_, "ZRANGE  %"PRId64" %"PRId64, key.c_str(), start, stop));
+    Status status(ctx_);
+    if (!status.ok())
     {
-        if (reply->type == REDIS_REPLY_STRING)
-        {
-            ret->assign(reply->str, reply->len);
-        }
-
-        freeReplyObject(reply);
+        LOG_ERROR << "ZRANGE " << key << " " << start << " " << stop << " [" << status.errstr() << "]";
     }
 
-    return Status(ctx_);
-}
-
-Status Client::qrange(const std::string& key, int64_t start, int64_t stop, std::vector<std::string>* ret)
-{
-    assert(ctx_ != NULL);
-    assert(ret != NULL);
-    redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "LRANGE  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
     if (reply != NULL)
     {
         if (reply->type == REDIS_REPLY_ARRAY)
@@ -619,7 +705,156 @@ Status Client::qrange(const std::string& key, int64_t start, int64_t stop, std::
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
+}
+
+Status Client::zcard(const std::string& key, uint64_t* ret)
+{
+    assert(ctx_ != NULL);
+    assert(ret != NULL);
+    redisReply* reply = static_cast<redisReply*>(
+        redisCommand(ctx_, "ZCARD  %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "ZCARD " << key << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_ERROR)
+        {
+            *ret = reply->integer;
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::zremrangebyrank(const std::string& key, uint64_t start, uint64_t stop)
+{
+    redisReply* reply = static_cast<redisReply*>(
+        redisCommand(ctx_, "ZREMRANGEBYRANK %s %"PRIu64" %"PRIu64, key.c_str(), start, stop));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "ZREMRANGEBYRANK " << key << " " << start << " " << stop << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::qpush(const std::string& key, const std::string& val, int64_t* retSize)
+{
+    assert(ctx_ != NULL);
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "RPUSH %s %s", key.c_str(), val.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "RPUSH " << key << " " << val << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
+        {
+            *retSize = reply->integer;
+        }
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::qpush(const std::string& key, const std::vector<std::string>& vals, int64_t* retSize)
+{
+    assert(ctx_ != NULL);
+    std::stringstream ss;
+    std::vector<std::string>::const_iterator it;
+    for (it = vals.begin(); it != vals.end(); ++it)
+    {
+        ss << *it << " ";
+    }
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "RPUSH %s %s", key.c_str(), ss.str().c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "RPUSH " << key << " " << ss.str() << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
+        {
+            *retSize = reply->integer;
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::qpop(const std::string& key, std::string* ret)
+{
+    assert(ctx_ != NULL);
+    assert(ret != NULL);
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "LPOP %s", key.c_str()));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "LPOP " << key << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_STRING)
+        {
+            ret->assign(reply->str, reply->len);
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::qrange(const std::string& key, int64_t start, int64_t stop, std::vector<std::string>* ret)
+{
+    assert(ctx_ != NULL);
+    assert(ret != NULL);
+    redisReply* reply = static_cast<redisReply*>(redisCommand(
+        ctx_, "LRANGE  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "LRANGE " << key << " " << start << " " << stop << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_ARRAY)
+        {
+            for (size_t i = 0; i < reply->elements; i++)
+            {
+                ret->push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+            }
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
 }
 
 Status Client::qtrim(const std::string& key, int64_t start, int64_t stop)
@@ -627,12 +862,18 @@ Status Client::qtrim(const std::string& key, int64_t start, int64_t stop)
     assert(ctx_ != NULL); 
     redisReply* reply = static_cast<redisReply*>(redisCommand(
         ctx_, "LTRIM  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+    Status status(ctx_);
+    if (!status.ok())
+    {
+        LOG_ERROR << "LTRIM " << key << " " << start << " " << stop << " [" << status.errstr() << "]";
+    }
+
     if (reply != NULL)
     {
         freeReplyObject(reply);
     }
 
-    return Status(ctx_);
+    return status;
 }
 
 } // namespace redis
