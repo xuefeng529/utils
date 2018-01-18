@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 struct redisContext;
+struct redisReply;
 
 namespace redis
 {
@@ -17,13 +18,14 @@ namespace redis
 class Status
 {
 public:
-    Status(const redisContext* ctx) : ctx_(ctx) {}
+    Status(const redisContext* ctx, const redisReply* reply);
     bool ok() const;
-    bool connected() const;
+    bool valid() const;
     std::string errstr() const;
 
 private:
     const redisContext* ctx_;
+    const redisReply* reply_;
 };
 
 /// Note: Client not thread-safe
@@ -70,12 +72,6 @@ public:
                  uint64_t* nextCursor,
                  std::vector<std::string>* ret);
     
-    
-    
-
-    Status multi_zget(const std::string &name, const std::vector<std::string> &keys,
-                      std::vector<std::string> *scores);
-    
     /// Set
     Status sadd(const std::string& key, const std::string& member);
     Status sadd(const std::string& key, const std::vector<std::string>& members);
@@ -106,6 +102,8 @@ public:
     Status qtrim(const std::string& key, int64_t start, int64_t stop);
 
 private:
+    redisReply* wrapCommandArgv(const std::vector<std::string>& cmd, std::string* cmdStr);
+
     redisContext *ctx_;
     std::string ip_;
     int port_;
