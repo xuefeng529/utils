@@ -73,7 +73,7 @@ Client::~Client()
     }
 }
 
-bool Client::connect(const std::string &ip, int port)
+bool Client::connect(const std::string& ip, int port)
 {
     ctx_ = redisConnect(ip.c_str(), port);
     if (ctx_ == NULL || ctx_->err)

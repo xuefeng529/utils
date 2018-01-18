@@ -35,7 +35,7 @@ public:
     Client();
     ~Client();
 
-    bool connect(const std::string &ip, int port);
+    bool connect(const std::string& ip, int port);
     bool ping();
 
     /// Key
