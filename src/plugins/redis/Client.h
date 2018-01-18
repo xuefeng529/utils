@@ -104,7 +104,7 @@ public:
 private:
     redisReply* wrapCommandArgv(const std::vector<std::string>& cmd, std::string* cmdStr);
 
-    redisContext *ctx_;
+    redisContext* ctx_;
     std::string ip_;
     int port_;
 };
