@@ -47,6 +47,9 @@ public:
 	const std::string& name() const { return name_; }
 	void setThreadNum(int numThreads);
 	void start();
+    EventLoop* getLoop() const { return loop_; }
+    boost::shared_ptr<EventLoopThreadPool> threadPool() const
+    { return threadPool_; }
 
 private:
 	void newConnection(int sockfd, const InetAddress& peerAddr);

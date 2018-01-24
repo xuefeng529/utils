@@ -31,6 +31,10 @@ public:
 
 	void start();
 
+    EventLoop* getLoop() const { return server_.getLoop(); }
+    boost::shared_ptr<EventLoopThreadPool> threadPool() const
+    { return server_.threadPool(); }
+
 private:
 	void handleConnection(const TcpConnectionPtr& conn);
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);

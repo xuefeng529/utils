@@ -109,7 +109,7 @@ void daemonize(const char* pidfile)
 	}
 
 	setsid();        /* become session leader */
-	chdir("/");      /* change working directory */
+	//chdir("/");      /* change working directory */
 	umask(0);        /* clear our file mode creation mask */
 
 	fclose(stdin);

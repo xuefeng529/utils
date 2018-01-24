@@ -5,6 +5,7 @@ add_library(http ${SRCS})
 target_link_libraries(http net ssl)
 
 set(HEADERS
+  http_parser.h
   HttpRequest.h
   HttpResponse.h
   HttpClient.h
