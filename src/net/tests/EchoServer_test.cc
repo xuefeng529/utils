@@ -75,45 +75,48 @@ private:
 		if (conn->connected())
 		{
             LOG_INFO << "the number of connections: " << g_numConns.incrementAndGet();
-            char buf[64];
-            snprintf(buf, sizeof(buf), "conn_%"PRId32, connId_.incrementAndGet());
-            Context ctx = { buf, 0, 0 };
-            conn->setContext(ctx);          
+            /* char buf[64];
+             snprintf(buf, sizeof(buf), "conn_%"PRId32, connId_.incrementAndGet());
+             Context ctx = { buf, 0, 0 };
+             conn->setContext(ctx);   */
 		}
 		else
 		{                        
             LOG_INFO << "the number of connections: " << g_numConns.decrementAndGet();
-            const Context& ctx = boost::any_cast<Context>(conn->getContext());
+            /*const Context& ctx = boost::any_cast<Context>(conn->getContext());
             LOG_INFO << "total bytes: " << ctx.totalBytes << " write complete: " << ctx.numWriteComplte
-                << " [" << ctx.connName << "]";
+            << " [" << ctx.connName << "]";*/
 		}
 	}
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{		
-        Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
-        ctx->totalBytes += buffer->length();
-        /*LOG_INFO << "total bytes: " << ctx->totalBytes << " write complete: " << ctx->numWriteComplte
-            << " [" << ctx->connName << "]";*/
+        LOG_INFO << "recv bytes: " << buffer->length() << "[" << conn->name() << "]";
+        //buffer->retrieveAll();
+        //Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
+        //ctx->totalBytes += buffer->length();
+        ///*LOG_INFO << "total bytes: " << ctx->totalBytes << " write complete: " << ctx->numWriteComplte
+        //    << " [" << ctx->connName << "]";*/
         net::BufferPtr sendBuffer(new net::Buffer());
         sendBuffer->removeBuffer(buffer);
-        assert(buffer->length() == 0);
-        if (theTaskHandler)
-        {
-            theTaskHandler->run(boost::bind(handleTask, conn, sendBuffer));
-        }
-        else
-        {    
-            LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
-            conn->send(sendBuffer);
-        }				
+        conn->send(sendBuffer);
+        //assert(buffer->length() == 0);
+        //if (theTaskHandler)
+        //{
+        //    theTaskHandler->run(boost::bind(handleTask, conn, sendBuffer));
+        //}
+        //else
+        //{    
+        //    LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";
+        //    conn->send(sendBuffer);
+        //}				
 	}
 
 	void onWriteComplete(const net::TcpConnectionPtr& conn)
 	{
         //LOG_INFO << "onWriteComplete " << "[" << conn->name() << "]";
-        Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
-        ctx->numWriteComplte += 1;
+        //Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
+        //ctx->numWriteComplte += 1;
         /*LOG_INFO << "total bytes: " << ctx->totalBytes << " write complete: " << ctx->numWriteComplte
             << " [" << ctx->connName << "]";*/
 	}
@@ -154,7 +157,7 @@ int main(int argc, char* argv[])
 	LOG_INFO << "pid = " << getpid() << ", tid = " << base::CurrentThread::tid();
 	net::EventLoop loop;	
 	net::InetAddress listenAddr(static_cast<uint16_t>(atoi(argv[1])));
-	EchoServer server(&loop, listenAddr, 30);
+	EchoServer server(&loop, listenAddr, 0);
 	server.start();
 	loop.loop();
 	log.stop();

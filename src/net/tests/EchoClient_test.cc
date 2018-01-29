@@ -67,14 +67,18 @@ private:
 		if (conn->connected())
 		{		
             LOG_INFO << "the number of connections: " << g_numConns.incrementAndGet();
-            conn->setContext(g_current);
-            conn->send(g_text, sizeof(g_text));
+            /*conn->setContext(g_current);*/
+            conn->send(g_text, sizeof(g_text));         
             ++g_current;
             if (static_cast<size_t>(g_current) < g_clients.size())
             {
                 g_clients[g_current].connect();
             }
-            //conn->close();           
+            //conn->close();    
+           /* while (true)
+            {
+                sleep(100);
+            }*/
 		}	
         else
         {
@@ -105,6 +109,23 @@ private:
 	TcpClient client_;
     int64_t numBytes_;
 };
+
+#include <sys/eventfd.h>
+#include <unistd.h>
+#include <stddef.h>
+#include <iostream>
+#include <stdint.h>
+
+int createEventfd()
+{
+    int evtfd = ::eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+    if (evtfd < 0)
+    {
+        std::cout << "Failed in eventfd" << std::endl;
+        abort();
+    }
+    return evtfd;
+}
 
 int main(int argc, char* argv[])
 {

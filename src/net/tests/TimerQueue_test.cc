@@ -11,7 +11,8 @@ using namespace base;
 using namespace net;
 
 int cnt = 0;
-EventLoop* g_loop;
+
+int64_t timerId = 0;
 
 void printTid()
 {
@@ -19,46 +20,49 @@ void printTid()
 	printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
-void print(const std::string& msg)
+void myprint(net::EventLoop* loop, const std::string& msg)
 {
 	printf("%s: %s\n", Timestamp::now().toString().c_str(), msg.c_str());
-	g_loop->runAfter(1, boost::bind(print, msg));
+    static int count = 0;
+    if (++count == 5)
+    {
+        loop->cancel(timerId);
+    }
+
+    //loop->runAfter(3, boost::bind(myprint, loop, msg));
+    //loop->quit();
 }
 
-void cancel(int64_t timerId)
-{
-	g_loop->cancel(timerId);
-	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
-}
-
-void quit()
-{
-	printTid();
-	g_loop->quit();
-}
+//void cancel(int64_t timerId)
+//{
+//	g_loop->cancel(timerId);
+//	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
+//}
 
 int main()
 {
 	printTid();
-	sleep(1);
-	
-	EventLoop loop;
-	g_loop = &loop;
+    sleep(1);
 
-	for (int i = 0; i < 10; i++)
-	{
-		char name[32];
-		snprintf(name, sizeof(name), "timer_%d", i);
-		loop.runAfter(1, boost::bind(print, std::string(name)));
-	}
+    {
 
-	//int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
-	//(void)timeId;
-	//loop.runAfter(20, boost::bind(cancel, timeId));
-	//loop.runAfter(22, boost::bind(quit));
+        EventLoop loop;
 
-	loop.loop();
-	print("main loop exits");
+        for (int i = 0; i < 1; i++)
+        {
+            char name[32];
+            snprintf(name, sizeof(name), "timer_%d", i);
+            timerId = loop.runEvery(3, boost::bind(myprint, &loop, std::string(name)));
+        }
+
+        //int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
+        //(void)timeId;
+        //loop.runAfter(20, boost::bind(cancel, timeId));
+        //loop.runAfter(22, boost::bind(quit));
+
+        loop.loop();
+        printf("main loop exits");
+    }
 
 	/*sleep(1);
 	{

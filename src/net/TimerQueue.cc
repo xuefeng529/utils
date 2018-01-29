@@ -12,28 +12,18 @@ TimerQueue::TimerQueue(EventLoop* loop)
 {
 }
 
-TimerQueue::~TimerQueue()
-{
-	std::map<int64_t, Timer*>::iterator it = timers_.begin();
-	for ( ; it != timers_.end(); ++it)
-	{
-		it->second->stop();
-		delete it->second;
-	}
-}
-
 int64_t TimerQueue::addTimer(const TimerCallback& cb, uint64_t interval, bool repeat)
 {
-	Timer* timer = new Timer(loop_, cb, interval, repeat);
+	boost::shared_ptr<Timer> timer(new Timer(this, cb, interval, repeat));
 	loop_->runInLoop(boost::bind(&TimerQueue::addTimerInLoop, this, timer));
 	return timer->sequence();
 }
 
-void TimerQueue::addTimerInLoop(Timer* timer)
+void TimerQueue::addTimerInLoop(const boost::shared_ptr<Timer>& timer)
 {
 	loop_->assertInLoopThread();
 	timers_.insert(std::make_pair(timer->sequence(), timer));
-	timer->start();
+	timer->restart();
 }
 
 void TimerQueue::cancel(int64_t timerId)
@@ -44,12 +34,21 @@ void TimerQueue::cancel(int64_t timerId)
 void TimerQueue::cancelInLoop(int64_t timerId)
 {
 	loop_->assertInLoopThread();
-	std::map<int64_t, Timer*>::iterator it = timers_.find(timerId);
-	if (it != timers_.end())
+    boost::unordered_map<int64_t, boost::shared_ptr<Timer> >::const_iterator it = timers_.find(timerId);
+	if (it != timers_.end() && it->second->repeat())
 	{
-		it->second->stop();
-		timers_.erase(timerId);
+        it->second->disableRepeat();
 	}
+}
+
+void TimerQueue::removeTimerInLoop(int64_t timerId)
+{
+    loop_->assertInLoopThread();
+    boost::unordered_map<int64_t, boost::shared_ptr<Timer> >::const_iterator it = timers_.find(timerId);
+    if (it != timers_.end())
+    {
+        timers_.erase(timerId);
+    }
 }
 
 } // namespace net
