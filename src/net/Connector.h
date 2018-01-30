@@ -33,17 +33,16 @@ public:
 
 	const InetAddress& serverAddress() const { return serverAddr_; }
 
-	void start();
 	void restart();
 	
 private:
-	static void handleEvent(struct bufferevent *bev, short events, void *ctx);
+	static void handleEvent(struct bufferevent* bev, short events, void* ctx);
 
 	enum States { kDisconnected, kConnecting, kConnected };
 	void setState(States s) { state_ = s; }
-	void startInLoop();
 	void restartInLoop();
 	void connecting();
+    void freeEvent();
 
 	EventLoop* loop_;
 	const InetAddress serverAddr_;

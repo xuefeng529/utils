@@ -91,7 +91,7 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{		
-        LOG_INFO << "recv bytes: " << buffer->length() << "[" << conn->name() << "]";
+        //LOG_INFO << "recv bytes: " << buffer->length() << "[" << conn->name() << "]";
         //buffer->retrieveAll();
         //Context* ctx = boost::any_cast<Context>(conn->getMutableContext());
         //ctx->totalBytes += buffer->length();

@@ -10,7 +10,7 @@
 namespace net
 {
 
-void Connector::handleEvent(struct bufferevent *bev, short events, void *ctx)
+void Connector::handleEvent(struct bufferevent* bev, short events, void* ctx)
 {
 	Connector* connector = static_cast<Connector*>(ctx);
 	if (events & BEV_EVENT_CONNECTED)
@@ -20,10 +20,16 @@ void Connector::handleEvent(struct bufferevent *bev, short events, void *ctx)
 	}
 	else if (events & BEV_EVENT_ERROR)
 	{
-		connector->setState(kDisconnected);
-		LOG_ERROR << "Connector::handleEvent: " << base::strerror_tl(errno);
+        LOG_ERROR << "Connector::handleEvent: " << base::strerror_tl(errno);
+		connector->setState(kDisconnected);	
 		connector->connectingFailedCallback_();
 	}
+    else
+    {
+        LOG_ERROR << "Connector::handleEvent: unknow event," << events;
+    }
+
+    connector->freeEvent();
 }
 
 Connector::Connector(EventLoop* loop, const InetAddress& serverAddr)
@@ -32,20 +38,11 @@ Connector::Connector(EventLoop* loop, const InetAddress& serverAddr)
 	  state_(kDisconnected),
 	  bev_(NULL)
 {
-
 }
 
 Connector::~Connector()
 {
-    if (bev_ != NULL)
-    {
-        bufferevent_free(bev_);
-    }	
-}
-
-void Connector::start()
-{
-	loop_->runInLoop(boost::bind(&Connector::startInLoop, this));
+    freeEvent();
 }
 
 void Connector::restart()
@@ -57,33 +54,21 @@ void Connector::restartInLoop()
 {
 	loop_->assertInLoopThread();
 	setState(kDisconnected);
-	startInLoop();
-}
-
-void Connector::startInLoop()
-{
-	loop_->assertInLoopThread();
-	if (state_ == kDisconnected)
-	{
-		connecting();
-	}
+    connecting();
 }
 
 void Connector::connecting()
 {
-	if (bev_ != NULL)
-	{
-		bufferevent_free(bev_);
-	}
-
-	bev_ = bufferevent_socket_new(loop_->eventBase(), -1, BEV_OPT_CLOSE_ON_FREE);
+    LOG_INFO << "connecting " << serverAddr_.toIpPort();
+    assert(bev_ == NULL);
+    bev_ = bufferevent_socket_new(loop_->eventBase(), -1, 0);
 	if (bev_ == NULL)
 	{
 		LOG_FATAL << "bufferevent_socket_new of Connector::connecting: "
 			<< base::strerror_tl(errno);
 	}
 
-	bufferevent_setcb(bev_, NULL, NULL, handleEvent, this);
+    bufferevent_setcb(bev_, NULL, NULL, handleEvent, this);
 	const struct sockaddr* sin = serverAddr_.getSockAddr();
 	if (bufferevent_socket_connect(bev_, const_cast<struct sockaddr*>(sin), sizeof(struct sockaddr_in)) == -1)
 	{
@@ -92,6 +77,15 @@ void Connector::connecting()
 	}
 	
 	setState(kConnecting);
+}
+
+void Connector::freeEvent()
+{
+    if (bev_ != NULL)
+    {
+        bufferevent_free(bev_);
+        bev_ = NULL;
+    }
 }
 
 } // namespace net

@@ -88,7 +88,11 @@ private:
 
 	void onMessage(const net::TcpConnectionPtr& conn, net::Buffer* buffer)
 	{
-		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes";        
+		//LOG_INFO << conn->name() << ": " << buffer->length() << " bytes"; 
+        if (buffer->length() == 0)
+        {
+            LOG_INFO << conn->name() << ": connection closed";
+        }
 		std::string msg;
         buffer->retrieveAllAsString(&msg);
         assert(buffer->length() == 0);
@@ -129,7 +133,7 @@ int createEventfd()
 
 int main(int argc, char* argv[])
 {
-	base::Logger::setLogLevel(base::Logger::INFO);
+	base::Logger::setLogLevel(base::Logger::DEBUG);
 	LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
 	if (argc > 2)
 	{

@@ -198,13 +198,21 @@ void EventLoop::loop()
 
 void EventLoop::quit()
 {
-    runInLoop(boost::bind(&EventLoop::quitInLoop, this));
+	if (isInLoopThread())
+	{
+		quitInLoop();
+	}
+	else
+	{
+		runInLoop(boost::bind(&EventLoop::quitInLoop, this));
+	}
 }
 
 void EventLoop::quitInLoop()
 {
 	assertInLoopThread();
-	event_base_loopexit(base_, NULL);
+	struct timeval delay = { 2, 0 };
+	event_base_loopexit(base_, &delay);
 }
 
 void EventLoop::abortNotInLoopThread()

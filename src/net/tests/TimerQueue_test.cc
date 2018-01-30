@@ -23,11 +23,16 @@ void printTid()
 void myprint(net::EventLoop* loop, const std::string& msg)
 {
 	printf("%s: %s\n", Timestamp::now().toString().c_str(), msg.c_str());
-    static int count = 0;
+    loop->runAfter(3, boost::bind(myprint, loop, msg));
+    /*static int count = 0;
     if (++count == 5)
     {
         loop->cancel(timerId);
     }
+    else
+    {
+        loop->runAfter(3, boost::bind(myprint, loop, msg));
+    }*/
 
     //loop->runAfter(3, boost::bind(myprint, loop, msg));
     //loop->quit();
@@ -48,11 +53,11 @@ int main()
 
         EventLoop loop;
 
-        for (int i = 0; i < 1; i++)
+        for (int i = 0; i < 3; i++)
         {
             char name[32];
             snprintf(name, sizeof(name), "timer_%d", i);
-            timerId = loop.runEvery(3, boost::bind(myprint, &loop, std::string(name)));
+            timerId = loop.runAfter(3, boost::bind(myprint, &loop, std::string(name)));
         }
 
         //int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
