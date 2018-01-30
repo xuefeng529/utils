@@ -211,8 +211,7 @@ void EventLoop::quit()
 void EventLoop::quitInLoop()
 {
 	assertInLoopThread();
-	struct timeval delay = { 2, 0 };
-	event_base_loopexit(base_, &delay);
+	event_base_loopexit(base_, NULL);
 }
 
 void EventLoop::abortNotInLoopThread()
