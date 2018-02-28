@@ -25,7 +25,7 @@ public:
     HttpResponse request(const std::string& url, HttpRequest::Method method, const std::string& body = std::string());
 
 private:
-    void handleConnection(const TcpConnectionPtr& conn, const HttpRequest& request);
+    void handleConnection(const TcpConnectionPtr& conn, const net::BufferPtr& buffer);
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 	void handleResponse(const TcpConnectionPtr& conn, const HttpResponse& response);
    

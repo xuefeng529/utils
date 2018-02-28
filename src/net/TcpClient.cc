@@ -49,7 +49,12 @@ TcpClient::TcpClient(EventLoop* loop,
 TcpClient::~TcpClient()
 {
 	LOG_DEBUG << "TcpClient::dtor[" << name_
-		<< "] - connector " << get_pointer(connector_);   
+		<< "] - connector " << get_pointer(connector_);
+    base::MutexLockGuard lock(mutex_);
+    if (connection_)
+    {
+        loop_->runInLoop(boost::bind(&TcpConnection::connectDestroyed, connection_));
+    }
 }
 
 void TcpClient::connect()

@@ -92,19 +92,19 @@ HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method met
     request.addHeader("Host", host);
     request.setCloseConnection(!keepalive_);
     request.setBody(body);
+    BufferPtr buffer(new Buffer());
+    request.appendToBuffer(buffer.get());
     if (host != lastHost_ || !client_ || !client_->isConnected() || !keepalive_)
     {
         client_.reset(new TcpClient(loop_, serverAddr, "HttpClient", 0, sslCtx_));
         client_->setConnectionCallback(
-            boost::bind(&HttpClient::handleConnection, this, _1, request));
+            boost::bind(&HttpClient::handleConnection, this, _1, buffer));
         client_->setMessageCallback(
             boost::bind(&HttpClient::handleMessage, this, _1, _2));       
         client_->connect();
     }
     else
     {
-        BufferPtr buffer(new Buffer());
-        request.appendToBuffer(buffer.get());
         client_->send(buffer);
     }  
     lastHost_ = host;
@@ -113,15 +113,13 @@ HttpResponse HttpClient::request(const std::string& url, HttpRequest::Method met
     return *response_;
 }
 
-void HttpClient::handleConnection(const TcpConnectionPtr& conn, const HttpRequest& request)
+void HttpClient::handleConnection(const TcpConnectionPtr& conn, const net::BufferPtr& buffer)
 {
     if (conn->connected())
     {
         HttpContext context(conn, HttpContext::kResponse);
         context.setResponseCallback(boost::bind(&HttpClient::handleResponse, this, _1, _2));
         conn->setContext(context);
-        BufferPtr buffer(new Buffer());
-        request.appendToBuffer(buffer.get());
         conn->send(buffer);
     }
     else
