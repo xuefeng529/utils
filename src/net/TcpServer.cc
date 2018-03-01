@@ -53,7 +53,6 @@ TcpServer::~TcpServer()
 		it->second.reset();
 		conn->getLoop()->runInLoop(
 			boost::bind(&TcpConnection::connectDestroyed, conn));
-		conn.reset();
 	}   
 }
 
