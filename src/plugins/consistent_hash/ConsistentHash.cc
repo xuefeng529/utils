@@ -1,14 +1,13 @@
 #include "plugins/consistent_hash/ConsistentHash.h"
+#include "plugins/consistent_hash/conhash.h"
 #include "base/Logging.h"
 
 #include <stdio.h>
 
-namespace plugin
-{
-namespace hash
+namespace plugins
 {
 
-const size_t ConsistentHash::kVirtualNodeNum;
+const size_t ConsistentHash::kNumVirtualNodes;
 
 ConsistentHash::ConsistentHash()
 	: conHash_(conhash_init(NULL))
@@ -58,9 +57,8 @@ bool ConsistentHash::deleteNode(const std::string& name)
 
 const char* ConsistentHash::lookup(const std::string& object) const
 {
-	const struct node_s* node = conhash_lookup(conHash_, object.c_str());
+    const Node* node = conhash_lookup(conHash_, object.c_str());
 	return (node != NULL ? node->iden : NULL);
 }
 
-} // namespace hash
-} // namespace plugin
+} // namespace plugins
