@@ -11,8 +11,7 @@ using namespace base;
 using namespace net;
 
 int cnt = 0;
-
-int64_t timerId = 0;
+EventLoop* g_loop;
 
 void printTid()
 {
@@ -20,54 +19,46 @@ void printTid()
 	printf("now %s\n", Timestamp::now().toString().c_str());
 }
 
-void myprint(net::EventLoop* loop, const std::string& msg)
+void print(const std::string& msg)
 {
 	printf("%s: %s\n", Timestamp::now().toString().c_str(), msg.c_str());
-    loop->runAfter(3, boost::bind(myprint, loop, msg));
-    /*static int count = 0;
-    if (++count == 5)
-    {
-        loop->cancel(timerId);
-    }
-    else
-    {
-        loop->runAfter(3, boost::bind(myprint, loop, msg));
-    }*/
-
-    //loop->runAfter(3, boost::bind(myprint, loop, msg));
-    //loop->quit();
+	g_loop->runAfter(1, boost::bind(print, msg));
 }
 
-//void cancel(int64_t timerId)
-//{
-//	g_loop->cancel(timerId);
-//	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
-//}
+void cancel(int64_t timerId)
+{
+	g_loop->cancel(timerId);
+	printf("cancelled at %s\n", Timestamp::now().toString().c_str());
+}
+
+void quit()
+{
+	printTid();
+	g_loop->quit();
+}
 
 int main()
 {
 	printTid();
-    sleep(1);
+	sleep(1);
+	
+	EventLoop loop;
+	g_loop = &loop;
 
-    {
+	for (int i = 0; i < 10; i++)
+	{
+		char name[32];
+		snprintf(name, sizeof(name), "timer_%d", i);
+		loop.runAfter(1, boost::bind(print, std::string(name)));
+	}
 
-        EventLoop loop;
+	//int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
+	//(void)timeId;
+	//loop.runAfter(20, boost::bind(cancel, timeId));
+	//loop.runAfter(22, boost::bind(quit));
 
-        for (int i = 0; i < 3; i++)
-        {
-            char name[32];
-            snprintf(name, sizeof(name), "timer_%d", i);
-            timerId = loop.runAfter(3, boost::bind(myprint, &loop, std::string(name)));
-        }
-
-        //int64_t timeId = loop.runEvery(2, boost::bind(print, "every2"));
-        //(void)timeId;
-        //loop.runAfter(20, boost::bind(cancel, timeId));
-        //loop.runAfter(22, boost::bind(quit));
-
-        loop.loop();
-        printf("main loop exits");
-    }
+	loop.loop();
+	print("main loop exits");
 
 	/*sleep(1);
 	{
