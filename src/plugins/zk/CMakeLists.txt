@@ -5,7 +5,8 @@ add_library(zk STATIC ${SRCS})
 target_link_libraries(zk base zookeeper_mt)
 
 set(HEADERS
-ZkClient.h
+Client.h
+LeaderSelector.h
 )
 install(FILES ${HEADERS} DESTINATION include/plugins/zk)
 install(TARGETS zk DESTINATION lib)

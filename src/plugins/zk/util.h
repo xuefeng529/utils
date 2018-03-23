@@ -1,13 +1,13 @@
-#ifndef PLUGIN_ZK_ZKUTIL_H
-#define PLUGIN_ZK_ZKUTIL_H
+#ifndef PLUGINS_ZK_UTIL_H
+#define PLUGINS_ZK_UTIL_H
 
 #include <string>
 
 #include <stdint.h>
 
-namespace zk
+namespace plugins
 {
-namespace ZkUtil 
+namespace zk
 {
 
 bool isChild(const std::string& child, const std::string& parent);
@@ -16,7 +16,7 @@ const char * getNodeName(const std::string& path);
 int32_t getSequenceNo(const std::string& name);
 bool isValidPath(const std::string& path);
 
-} // namespace ZkUtil 
 } // namespace zk
+} // namespace plugins
 
-#endif // PLUGIN_ZK_ZKUTIL_H
+#endif // PLUGINS_ZK_UTIL_H

@@ -1,9 +1,9 @@
-#include "plugins/zk/ZkUtil.h"
+#include "plugins/zk/util.h"
 #include "base/Logging.h"
 
-namespace zk
+namespace plugins
 {
-namespace ZkUtil 
+namespace zk
 {
 
 bool isChild(const std::string& child, const std::string& parent)
@@ -110,5 +110,5 @@ bool isValidPath(const std::string& path)
     return true;
 }
 
-} // namespace ZkUtil 
 } // namespace zk
+} // namespace plugins

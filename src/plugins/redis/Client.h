@@ -35,7 +35,7 @@ public:
     Client();
     ~Client();
 
-    bool connect(const std::string& ip, int port);
+    bool connect(const std::string& ip, int port, const std::string& password);
     bool ping();
 
     /// Key
@@ -103,10 +103,12 @@ public:
 
 private:
     redisReply* wrapCommandArgv(const std::vector<std::string>& cmd, std::string* cmdStr);
+    Status auth(const std::string& password);
 
     redisContext* ctx_;
     std::string ip_;
     int port_;
+    std::string password_;
 };
 
 } // namespace redis

@@ -73,8 +73,14 @@ Client::~Client()
     }
 }
 
-bool Client::connect(const std::string& ip, int port)
+bool Client::connect(const std::string& ip, int port, const std::string& password)
 {
+    if (ctx_ != NULL)
+    {
+        redisFree(ctx_);
+        ctx_ = NULL;
+    }
+
     ctx_ = redisConnect(ip.c_str(), port);
     if (ctx_ == NULL || ctx_->err)
     {
@@ -92,7 +98,9 @@ bool Client::connect(const std::string& ip, int port)
 
     ip_ = ip;
     port_ = port;
-    return true;
+    password_ = password;
+    Status s = auth(password);
+    return s.ok();
 }
 
 bool Client::ping()
@@ -908,6 +916,25 @@ redisReply* Client::wrapCommandArgv(const std::vector<std::string>& cmd, std::st
     }
 
     return static_cast<redisReply*>(redisCommandArgv(ctx_, argv.size(), argv.data(), argvLen.data()));
+}
+
+Status Client::auth(const std::string& password)
+{
+    assert(ctx_ != NULL);
+    redisReply* reply = static_cast<redisReply*>(
+        redisCommand(ctx_, "AUTH %s", password.c_str()));
+    Status status(ctx_, reply);
+    if (!status.ok())
+    {
+        LOG_ERROR << "AUTH " << password << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        freeReplyObject(reply);
+    }
+
+    return status;
 }
 
 } // namespace redis
