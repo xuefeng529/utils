@@ -17,7 +17,7 @@ class LeaderSelector : boost::noncopyable
 public:
     /// @host 127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002
     /// @sessionTimeout 会话过期时间
-    /// @parentNode 父路径/parentNode
+    /// @parentNode 父节点 /parentNode
     /// @name 唯一标识
     LeaderSelector(const std::string& host, 
                    uint32_t sessionTimeout,

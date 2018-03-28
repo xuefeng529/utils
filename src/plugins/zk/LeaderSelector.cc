@@ -51,7 +51,7 @@ void LeaderSelector::handleCreate(ErrorCode code, const std::string& path)
     }
     else if (code == kNotExist)
     {
-        LOG_ERROR << "You need to create /" << parentNode_;
+        LOG_ERROR << "You need to create " << parentNode_;
         sleep(3);
         exit(0);
     }
