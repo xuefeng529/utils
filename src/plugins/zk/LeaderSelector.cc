@@ -77,7 +77,7 @@ void LeaderSelector::handleGetChildren(ErrorCode code, const std::string& path, 
         }
         else 
         {
-            LOG_INFO << "I am already Leader, just new node found - count=" << children.size();
+            LOG_INFO << "I am already leader, just new node found - count=" << children.size();
         }
     }
     else if (code == kError)
