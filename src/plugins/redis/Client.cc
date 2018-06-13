@@ -484,17 +484,17 @@ Status Client::hkeys(const std::string& key, std::vector<std::string>* ret)
 }
 
 Status Client::hscan(const std::string& key,
-                          uint64_t cursor,
-                          const std::string& pattern,
-                          uint64_t count,
-                          uint64_t* nextCursor,
-                          std::vector<std::string>* ret)
+                     uint64_t cursor,
+                     const std::string& pattern,
+                     uint64_t count,
+                     uint64_t* nextCursor,
+                     std::vector<std::string>* ret)
 {
     assert(ctx_ != NULL);
     assert(nextCursor != NULL);
     assert(ret != NULL);
     std::stringstream ss;
-    ss << "HSCAN " << cursor;
+    ss << "HSCAN " << key << " " << cursor;
     if (!pattern.empty())
     {
         ss << " MATCH " << pattern;
