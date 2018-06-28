@@ -346,6 +346,12 @@ bool Buffer::retrieveAsBytes(char* buf, size_t len)
 
 bool Buffer::retrieveAsString(size_t len, std::string* ret)
 {
+    if (len == 0)
+    {
+        *ret = "";
+        return true;
+    }
+
     ret->resize(len);
     return retrieveAsBytes(&*ret->begin(), ret->size());
 }
