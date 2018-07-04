@@ -5,6 +5,7 @@
 #include <string>
 
 typedef void CURL;
+struct curl_slist;
 
 namespace plugins
 {
@@ -17,17 +18,18 @@ public:
     HttpClient(bool keepalive);
     ~HttpClient();
 
-    bool get(const std::string& url, std::string* response);
-    bool post(const std::string& url, const std::string& data, std::string* response = NULL);
-    bool put(const std::string& url, const std::string& data, std::string* response = NULL);
-    bool del(const std::string& url, std::string* response = NULL);
+    bool get(const std::string& url, int64_t timeout, std::string* response);
+    bool post(const std::string& url, const std::string& data, int64_t timeout, std::string* response = NULL);
+    bool put(const std::string& url, const std::string& data, int64_t timeout, std::string* response = NULL);
+    bool del(const std::string& url, int64_t timeout, std::string* response = NULL);
     
 private:
     static size_t onResponse(void* contents, size_t size, size_t nmemb, void* userp);
 
-    void enableKeepalive();
+    struct curl_slist* enableKeepalive();
 
     CURL *curl_;
+    bool keepalive_;
 };
 
 } // namespace curl

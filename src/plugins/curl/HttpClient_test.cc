@@ -26,25 +26,26 @@ int main(int argc, char* argv[])
         std::map<std::string, std::string> kvs;
         parse(line, &kvs);
         std::string url = kvs["-u"];
+        int64_t timeout = atoll(kvs["-t"].c_str());
         std::string response;
         if (kvs["-x"] == "get")
         {
-            cli.get(url, &response);
+            cli.get(url, timeout, &response);
             LOG_INFO << "get response: " << response;
         }
         else if (kvs["-x"] == "put")
         {
-            cli.put(url, kvs["-d"], &response);
+            cli.put(url, kvs["-d"], timeout, &response);
             LOG_INFO << "put response: " << response;
         }
         else if (kvs["-x"] == "post")
         {
-            cli.post(url, kvs["-d"], &response);
+            cli.post(url, kvs["-d"], timeout, &response);
             LOG_INFO << "post response: " << response;
         }
         else if (kvs["-x"] == "delete")
         {
-            cli.del(url, &response);
+            cli.del(url, timeout, &response);
             LOG_INFO << "del response: " << response;
         }
         else
