@@ -29,10 +29,15 @@ LeaderSelector::LeaderSelector(const std::string& hosts,
     base::StringUtil::split(hosts, ",", &hosts_);
     if (hosts_.empty())
     {
-        LOG_ERROR << "hosts empty";
+        LOG_ERROR << "hosts empty: " << hosts;
         sleep(3);
         abort();
     }
+
+    for (size_t i = 0; i < hosts_.size(); i++)
+    {
+        LOG_INFO << "host: " << hosts_[i];
+    }   
 }
 
 void LeaderSelector::start()
