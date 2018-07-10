@@ -1,9 +1,9 @@
 #include "plugins/curl/HttpClient.h"
 #include "base/Logging.h"
 
-#include <curl/curl.h>
+#include <algorithm>
 
-#include <assert.h>
+#include <curl/curl.h>
 
 namespace plugins
 {
@@ -14,13 +14,53 @@ namespace curl
 const int kTcpKeepIdle = 120; 
 const int kTcpKeepIntv = 60;
 
-size_t HttpClient::onResponse(void* contents, size_t size, size_t nmemb, void* userp)
+namespace
+{
+
+inline void addHeader(const char* buf, size_t len, std::map<std::string, std::string>* kvs)
+{
+    const char* end = buf + len;
+    const char* colon = std::find(buf, end, ':');
+    if (colon != end)
+    {
+        std::string field(buf, colon);
+        ++colon;
+        while (colon < end && isspace(*colon))
+        {
+            ++colon;
+        }
+        std::string value(colon, end);
+        while (!value.empty() && isspace(value[value.size() - 1]))
+        {
+            value.resize(value.size() - 1);
+        }
+
+        (*kvs)[field] = value;
+        LOG_INFO << field << ":" << value;
+    }
+}
+
+}
+
+size_t HttpClient::handleHeader(void* buf, size_t size, size_t nmemb, void* ctx)
 {
     size_t realSize = size * nmemb;
-    if (userp != NULL)
+    if (ctx != NULL)
     {
-        std::string* response = static_cast<std::string*>(userp);
-        response->assign(static_cast<const char*>(contents), realSize);
+        std::map<std::string, std::string>* headers = static_cast<std::map<std::string, std::string>*>(ctx);
+        addHeader(static_cast<const char*>(buf), realSize, headers);
+    }
+
+    return realSize;
+}
+
+size_t HttpClient::handleResponse(void* buf, size_t size, size_t nmemb, void* ctx)
+{
+    size_t realSize = size * nmemb;
+    if (ctx != NULL)
+    {
+        std::string* response = static_cast<std::string*>(ctx);
+        response->assign(static_cast<const char*>(buf), realSize);
     }
     
     return realSize;
@@ -28,7 +68,8 @@ size_t HttpClient::onResponse(void* contents, size_t size, size_t nmemb, void* u
 
 HttpClient::HttpClient(bool keepalive)
     : curl_(keepalive ? curl_easy_init() : NULL),
-      keepalive_(keepalive)
+      keepalive_(keepalive),
+      code_(0)
 {
     if (keepalive_ && curl_ == NULL)
     {
@@ -46,7 +87,11 @@ HttpClient::~HttpClient()
     }
 }
 
-bool HttpClient::get(const std::string& url, int timeout, std::string* response)
+bool HttpClient::get(const std::string& url, 
+                     int timeout, 
+                     std::string* response, 
+                     std::map<std::string, std::string>* headers,
+                     bool timeoutLog)
 {
     if (keepalive_)
     {
@@ -70,10 +115,16 @@ bool HttpClient::get(const std::string& url, int timeout, std::string* response)
         /// complete within timeout seconds
         curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
     }
+
+    if (headers != NULL)
+    {
+        curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleHeader);      
+        curl_easy_setopt(curl_, CURLOPT_HEADERDATA, headers);
+    }
     
     /// tell libcurl to follow redirection
     curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, onResponse);
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
     if (response != NULL)
     {
         curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
@@ -96,7 +147,12 @@ bool HttpClient::get(const std::string& url, int timeout, std::string* response)
     
     if (res != CURLE_OK)
     {
-        LOG_ERROR << "curl_easy_perform(): " << curl_easy_strerror(res);
+        if (res != CURLE_OPERATION_TIMEDOUT || timeoutLog)
+        {
+            LOG_ERROR << "curl_easy_perform(): " << curl_easy_strerror(res);
+        }
+        
+        code_ = static_cast<int>(res);
         return false;
     }
 
@@ -129,7 +185,7 @@ bool HttpClient::post(const std::string& url, const std::string& data, int timeo
 
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, data.data()); 
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, data.size());
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, onResponse);
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
     if (response != NULL)
     {
         curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
@@ -150,6 +206,7 @@ bool HttpClient::post(const std::string& url, const std::string& data, int timeo
     if (res != CURLE_OK)
     { 
         LOG_ERROR << "curl_easy_perform(): " << curl_easy_strerror(res);
+        code_ = static_cast<int>(res);
         return false;
     }
 
@@ -182,7 +239,7 @@ bool HttpClient::put(const std::string& url, const std::string& data, int timeou
 
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, data.data());
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, data.size());
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, onResponse);
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
     if (response != NULL)
     {
         curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
@@ -203,6 +260,7 @@ bool HttpClient::put(const std::string& url, const std::string& data, int timeou
     if (res != CURLE_OK)
     {
         LOG_ERROR << "curl_easy_perform(): " << curl_easy_strerror(res);
+        code_ = static_cast<int>(res);
         return false;
     }
 
@@ -233,7 +291,7 @@ bool HttpClient::del(const std::string& url, int timeout, std::string* response)
         curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
     }
 
-    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, onResponse);
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
     if (response != NULL)
     {
         curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
@@ -254,6 +312,7 @@ bool HttpClient::del(const std::string& url, int timeout, std::string* response)
     if (res != CURLE_OK)
     {
         LOG_ERROR << "curl_easy_perform(): " << curl_easy_strerror(res);
+        code_ = static_cast<int>(res);
         return false;
     }
 

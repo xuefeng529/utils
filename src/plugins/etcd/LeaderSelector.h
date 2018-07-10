@@ -2,7 +2,7 @@
 #define PLUGINS_ETCD_LEADERSELECTOR_H
 
 #include "base/Thread.h"
-#include "base/CountDownLatch.h"
+#include "base/Atomic.h"
 #include "plugins/curl/HttpClient.h"
 
 #include <boost/function.hpp>
@@ -35,17 +35,18 @@ public:
     void start();
 
 private:
+    void delay(int seconds);
     void watchThreadFunc();
-    void onChildrenChange(const HttpClientPtr& cli);
-
+    bool onChildrenChange(const HttpClientPtr& cli, const std::string& host);
+    
     bool leader_;
-    base::CountDownLatch electLatch_;
     boost::scoped_ptr<base::Thread> watchThread_;   
     std::vector<std::string> hosts_;
     const int timeout_;
     const std::string parentNode_;
     const std::string value_;
     const TakeLeaderCallBack takeLeaderCb_;
+    base::AtomicInt32 ownNodeCreated_;
 };
 
 
