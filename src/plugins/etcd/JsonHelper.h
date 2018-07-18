@@ -1,10 +1,7 @@
 #ifndef PLUGINS_ETCD_JSONHELPER_H
 #define PLUGINS_ETCD_JSONHELPER_H
 
-#include "plugins/curl/HttpClient.h"
-
-#include <boost/function.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <string>
 #include <vector>
 
 namespace plugins

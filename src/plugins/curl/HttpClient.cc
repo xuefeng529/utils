@@ -114,6 +114,7 @@ bool HttpClient::get(const std::string& url,
     {
         /// complete within timeout seconds
         curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
+        curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
     }
 
     if (headers != NULL)

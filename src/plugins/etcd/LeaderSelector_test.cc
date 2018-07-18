@@ -1,6 +1,7 @@
 #include "plugins/etcd/LeaderSelector.h"
 #include "base/Logging.h"
 
+#include <boost/bind.hpp>
 #include <iostream>
 
 #include <time.h>
@@ -10,9 +11,17 @@
 
 char g_nodeName[1024];
 
-void takeLeader()
+void takeLeader(plugins::etcd::ElectionType type)
 {
-    LOG_INFO << "I am leader - " << g_nodeName;
+    if (type == plugins::etcd::kLeader)
+    {
+        LOG_INFO << "I am leader - " << g_nodeName;
+    }
+    else
+    {
+        LOG_INFO << "I am follower - " << g_nodeName;
+    }
+    
 }
 
 int main(int argc, char* argv[])
@@ -29,8 +38,10 @@ int main(int argc, char* argv[])
     snprintf(g_nodeName, sizeof(g_nodeName), "%ld-%ld-%d-%d", tv.tv_sec, tv.tv_usec, getpid(), rand());
 
     LOG_INFO << "start ...";
-    plugins::etcd::LeaderSelector leaderSelector(argv[1], 3, "leader_follower", g_nodeName, takeLeader);
+    plugins::etcd::LeaderSelector leaderSelector(argv[1], 3, "leader_follower", 
+                                                 g_nodeName, boost::bind(takeLeader, _1));
     leaderSelector.start();
+    LOG_INFO << "please input";
     std::string line;
     std::getline(std::cin, line);
     return 0;

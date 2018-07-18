@@ -21,13 +21,16 @@ LeaderSelector::LeaderSelector(const std::string& hosts,
                                int timeout,
                                const std::string& parentNode,
                                const std::string& value,
-                               const TakeLeaderCallBack& cb)
-    : leader_(false),
+                               const LeaderElectionCallBack& cb)
+    : started_(false),
+      leader_(false),
       watchThread_(new base::Thread(boost::bind(&LeaderSelector::watchThreadFunc, this))),
+      refreshThread_(new base::Thread(boost::bind(&LeaderSelector::refreshThreadFunc, this))),
+      initElectionLatch_(1),
       timeout_(timeout),
       parentNode_(parentNode),
       value_(value),
-      takeLeaderCb_(cb)
+      leaderElectionCb_(cb)
 {
     base::StringUtil::split(hosts, ",", &hosts_);
     if (hosts_.empty())
@@ -45,41 +48,11 @@ LeaderSelector::LeaderSelector(const std::string& hosts,
 
 void LeaderSelector::start()
 {
-    assert(!watchThread_->started());
+    assert(!started_);
+    started_ = true;
     watchThread_->start();
-    HttpClientPtr cli(new plugins::curl::HttpClient(true));
-    for (size_t i = 0; i < hosts_.size(); ++i %= hosts_.size())
-    {
-        delay(timeout_);
-        char url[1024];
-        snprintf(url, sizeof(url), "http://%s/v2/keys/%s", hosts_[i].c_str(), parentNode_.c_str());
-        char data[1024];
-        snprintf(data, sizeof(data), "value=%s&ttl=%d", value_.c_str(), timeout_);
-        std::string response;
-        /// ´´½¨´øÓÐttlµÄÓÐÐò½Úµã
-        if (!cli->post(url, data, timeout_, &response))
-        {
-            LOG_WARN << "post failed: " << url;          
-            continue;
-        }
-
-        LOG_INFO << "post response: " << response;
-        ownNodeCreated_.increment();
-        std::string key;
-        std::string value;
-        plugins::etcd::JsonHelper::getPostNode(response, &key, &value);
-        snprintf(url, sizeof(url), "http://%s/v2/keys%s",
-                 hosts_[i].c_str(), key.c_str());
-        snprintf(data, sizeof(data), "ttl=%d&refresh=true&prevExist=true", timeout_);
-        LOG_INFO << "put url: " << url << "?" << data;
-        /// Ë¢ÐÂ½Úµãttl
-        while (cli->put(url, data, timeout_, &response))
-        {
-            int sleepInvt = timeout_ / 2;
-            sleepInvt = sleepInvt < 1 ? 1 : sleepInvt;
-            delay(sleepInvt);
-        }
-    }
+    refreshThread_->start();
+    initElectionLatch_.wait();
 }
 
 void LeaderSelector::delay(int seconds)
@@ -105,7 +78,7 @@ void LeaderSelector::watchThreadFunc()
         snprintf(url, sizeof(url), "http://%s/v2/keys/%s?wait=true&recursive=true",
                  hosts_[i].c_str(), parentNode_.c_str());
         LOG_INFO << "watching: " << url;      
-        /// ¼à¿ØÄ¿Â¼ÏÂ×Ó½Úµã±ä»¯
+        /// ç›‘æŽ§ç›®å½•ä¸‹å­èŠ‚ç‚¹å˜åŒ–
         do 
         {
             if (!cli->get(url, timeout_, &response, NULL, false))
@@ -143,6 +116,45 @@ void LeaderSelector::watchThreadFunc()
     }
 }
 
+void LeaderSelector::refreshThreadFunc()
+{
+    HttpClientPtr cli(new plugins::curl::HttpClient(true));
+    for (size_t i = 0; i < hosts_.size(); ++i %= hosts_.size())
+    {      
+        char url[1024];
+        snprintf(url, sizeof(url), "http://%s/v2/keys/%s", hosts_[i].c_str(), parentNode_.c_str());
+        char data[1024];
+        snprintf(data, sizeof(data), "value=%s&ttl=%d", value_.c_str(), timeout_);
+        std::string response;
+        /// åˆ›å»ºå¸¦æœ‰ttlçš„æœ‰åºèŠ‚ç‚¹
+        if (!cli->post(url, data, timeout_, &response))
+        {
+            LOG_WARN << "post failed: " << url;
+            delay(timeout_);
+            continue;
+        }
+
+        LOG_INFO << "post response: " << response;
+        ownNodeCreated_.increment();
+        std::string key;
+        std::string value;
+        plugins::etcd::JsonHelper::getPostNode(response, &key, &value);
+        snprintf(url, sizeof(url), "http://%s/v2/keys%s",
+                 hosts_[i].c_str(), key.c_str());
+        snprintf(data, sizeof(data), "ttl=%d&refresh=true&prevExist=true", timeout_);
+        LOG_INFO << "put url: " << url << "?" << data;
+        /// åˆ·æ–°èŠ‚ç‚¹ttl
+        while (cli->put(url, data, timeout_, &response))
+        {
+            int sleepInvt = timeout_ / 2;
+            sleepInvt = sleepInvt < 1 ? 1 : sleepInvt;
+            delay(sleepInvt);
+        }
+
+        delay(timeout_);
+    }
+}
+
 bool LeaderSelector::onChildrenChange(const HttpClientPtr& cli, const std::string& host)
 {
     char url[1024];
@@ -164,7 +176,7 @@ bool LeaderSelector::onChildrenChange(const HttpClientPtr& cli, const std::strin
         LOG_INFO << "sorted key: " << sortedNodes[i] << " value: " << sortedNodes[i + 1];
     }
 
-    /// sortedNodes[0]ÊÇÄ¿Â¼ÏÂ×îÐ¡µÄ×Ó¼ü
+    /// sortedNodes[0]æ˜¯ç›®å½•ä¸‹æœ€å°çš„å­é”®
     if (sortedNodes.size() < 2)
     {
         LOG_WARN << "no exist sorted node";
@@ -177,9 +189,9 @@ bool LeaderSelector::onChildrenChange(const HttpClientPtr& cli, const std::strin
         {
             LOG_INFO << "I am leader: " << value_;
             leader_ = true;
-            if (takeLeaderCb_)
-            {
-                takeLeaderCb_();
+            if (leaderElectionCb_)
+            {                
+                leaderElectionCb_(kLeader);
             }
         }
         else
@@ -189,8 +201,23 @@ bool LeaderSelector::onChildrenChange(const HttpClientPtr& cli, const std::strin
     }
     else
     {
-        LOG_INFO << "I am follower: " << value_;
+        if (leader_)
+        {
+            LOG_INFO << "I am follower: " << value_;
+            leader_ = false;
+            if (leaderElectionCb_)
+            {
+                leaderElectionCb_(kFollower);
+            }
+        }
+        else
+        {
+            LOG_INFO << "I am already follower: " << value_;
+        }  
     }
+
+    LOG_INFO << "election complete";
+    initElectionLatch_.countDown();
 
     return true;
 }

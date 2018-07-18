@@ -3,6 +3,7 @@
 
 #include "base/Thread.h"
 #include "base/Atomic.h"
+#include "base/CountDownLatch.h"
 #include "plugins/curl/HttpClient.h"
 
 #include <boost/function.hpp>
@@ -15,9 +16,9 @@ namespace plugins
 namespace etcd 
 {
 
+typedef enum { kLeader, kFollower } ElectionType;
 typedef boost::shared_ptr<plugins::curl::HttpClient> HttpClientPtr;
-
-typedef boost::function<void()> TakeLeaderCallBack;
+typedef boost::function<void(ElectionType)> LeaderElectionCallBack;
 
 class LeaderSelector : boost::noncopyable
 {
@@ -30,22 +31,26 @@ public:
                    int timeout,
                    const std::string& parentNode,
                    const std::string& value,
-                   const TakeLeaderCallBack& cb);
+                   const LeaderElectionCallBack& cb);
 
     void start();
 
 private:
     void delay(int seconds);
     void watchThreadFunc();
+    void refreshThreadFunc();
     bool onChildrenChange(const HttpClientPtr& cli, const std::string& host);
     
+    bool started_;
     bool leader_;
-    boost::scoped_ptr<base::Thread> watchThread_;   
+    boost::scoped_ptr<base::Thread> watchThread_;
+    boost::scoped_ptr<base::Thread> refreshThread_;
+    base::CountDownLatch initElectionLatch_;
     std::vector<std::string> hosts_;
     const int timeout_;
     const std::string parentNode_;
     const std::string value_;
-    const TakeLeaderCallBack takeLeaderCb_;
+    const LeaderElectionCallBack leaderElectionCb_;
     base::AtomicInt32 ownNodeCreated_;
 };
 
