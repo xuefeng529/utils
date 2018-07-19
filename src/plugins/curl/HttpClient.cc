@@ -329,7 +329,7 @@ struct curl_slist* HttpClient::setConnection(bool keepalive)
         curl_easy_setopt(curl_, CURLOPT_TCP_KEEPALIVE, 1L);
         /// keep-alive idle time to kTcpKeepIdle seconds
         curl_easy_setopt(curl_, CURLOPT_TCP_KEEPIDLE, kTcpKeepIdle);
-        //// interval time between keep-alive probes: kTcpKeepIntv seconds
+        /// interval time between keep-alive probes: kTcpKeepIntv seconds
         curl_easy_setopt(curl_, CURLOPT_TCP_KEEPINTVL, kTcpKeepIntv);
         headerList = curl_slist_append(headerList, "Connection: keep-alive");
     }
