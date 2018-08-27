@@ -14,7 +14,7 @@ class InetAddress
 {
 public:
 	explicit InetAddress(uint16_t port);
-	InetAddress(char* ip, uint16_t port);
+	InetAddress(const char* ip, uint16_t port);
 	explicit InetAddress(const struct sockaddr_in& addr)
 		: addr_(addr)
 	{ }

@@ -34,7 +34,7 @@ InetAddress::InetAddress(uint16_t port)
 	addr_.sin_port = sockets::hostToNetwork16(port);
 }
 
-InetAddress::InetAddress(char* ip, uint16_t port)
+InetAddress::InetAddress(const char* ip, uint16_t port)
 {
 	bzero(&addr_, sizeof(addr_));
 	addr_.sin_family = AF_INET;
