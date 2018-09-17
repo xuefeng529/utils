@@ -173,7 +173,7 @@ Status Client::set(const std::string& key, const std::string& val)
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "SET %s %s", key.c_str(), val.c_str()));
+        redisCommand(ctx_, "SET %s %b", key.c_str(), val.data(), val.size()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -192,7 +192,7 @@ Status Client::setex(const std::string& key, const std::string& val, int ttl)
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "SETEX %s %d %s", key.c_str(), ttl, val.c_str()));
+        redisCommand(ctx_, "SETEX %s %d %b", key.c_str(), ttl, val.data(), val.size()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -261,7 +261,7 @@ Status Client::hset(const std::string& key, const std::string& field, const std:
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "HSET %s %s %s", key.c_str(), field.c_str(), val.c_str()));
+        redisCommand(ctx_, "HSET %s %s %b", key.c_str(), field.c_str(), val.data(), val.size()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -537,7 +537,7 @@ Status Client::sadd(const std::string& key, const std::string& member)
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "SADD %s %s", key.c_str(), member.c_str()));
+        redisCommand(ctx_, "SADD %s %b", key.c_str(), member.data(), member.size()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -776,7 +776,7 @@ Status Client::qpush(const std::string& key, const std::string& val, int64_t* re
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "RPUSH %s %s", key.c_str(), val.c_str()));
+        ctx_, "RPUSH %s %b", key.c_str(), val.data(), val.size()));
     Status status(ctx_, reply);
     if (!status.ok())
     {

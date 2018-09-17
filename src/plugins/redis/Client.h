@@ -1,4 +1,4 @@
-﻿#ifndef PLUGINS_REDIS_CLIENT_H
+#ifndef PLUGINS_REDIS_CLIENT_H
 #define PLUGINS_REDIS_CLIENT_H
 
 #include <string>
