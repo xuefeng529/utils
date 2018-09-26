@@ -45,12 +45,12 @@ typedef struct stCommonItem
 
 int setIosItem(PushIosItem *cur, int iItemID, const char *data, int len)
 {
-    PushIosItem *PiosItem = (PushIosItem *)cur;
-    PiosItem->cItemId = iItemID;
-    PiosItem->sItemLen = net::sockets::hostToNetwork16(len);
-    char *pData = (char *)(PiosItem + 1);
-    memcpy(pData, data, len);
-    return sizeof(PushIosItem) + len;
+    PushIosItem *PiosItem = static_cast<PushIosItem*>(cur);
+    PiosItem->cItemId = static_cast<char>(iItemID);
+    PiosItem->sItemLen = static_cast<short>(net::sockets::hostToNetwork16(static_cast<uint16_t>(len)));
+    char *pData = reinterpret_cast<char*>(PiosItem + 1);
+    memcpy(pData, data, static_cast<size_t>(len));
+    return static_cast<int>(sizeof(PushIosItem)) + len;
 }
 
 int hexStringToBinary(const char* pTextToken, const int iLen, char *pOut, const int iLenBuf)
@@ -62,7 +62,7 @@ int hexStringToBinary(const char* pTextToken, const int iLen, char *pOut, const 
     for (int i = 0; i < iLen; i += 2)
     {
         strncpy(strTemp, pTextToken + i, 2);
-        pOut[iIndex] = strtol(strTemp, (char**)NULL, 16);
+        pOut[iIndex] = static_cast<char>(strtol(strTemp, static_cast<char**>(NULL), 16));
         iIndex++;
         if (iIndex >= iLenBuf)
         {
@@ -78,22 +78,26 @@ int setPushBitPacket(char *pBuffer, stCommonItem* objData)
     if (objData == NULL) return 0;
 
     char strTokenBin[33] = { 0 };
-    hexStringToBinary(objData->strToken.c_str(), objData->strToken.length(), strTokenBin, sizeof(strTokenBin));
+    hexStringToBinary(objData->strToken.c_str(), static_cast<int>(objData->strToken.length()), strTokenBin, sizeof(strTokenBin));
 
     int iFrameLen = 0;
-    PushIosData *pIosData = (PushIosData *)pBuffer;
+    PushIosData *pIosData = reinterpret_cast<PushIosData*>(pBuffer);
     pIosData->cCmd = 2;
 
-    char *pCurDataBuf = (char *)(pIosData + 1);
-    iFrameLen += setIosItem((PushIosItem *)pCurDataBuf, 1, strTokenBin, 32);                                          //item1: token
-    iFrameLen += setIosItem((PushIosItem *)(pCurDataBuf + iFrameLen), 2, objData->strMsg.c_str(), objData->strMsg.length());  //item2: payload data
-    iFrameLen += setIosItem((PushIosItem *)(pCurDataBuf + iFrameLen), 3, (char *)&objData->uIdentifier, 4);           //item3: identifier
-    int expired_time = net::sockets::hostToNetwork32((int)time(NULL) + 86400);
-    iFrameLen += setIosItem((PushIosItem *)(pCurDataBuf + iFrameLen), 4, (char *)&expired_time, 4);                   //item4: expire time
-    iFrameLen += setIosItem((PushIosItem *)(pCurDataBuf + iFrameLen), 5, (char *)&PRIORITY_SEND_IMMEDIATELY, 1);      //item5: priority
+    char *pCurDataBuf = reinterpret_cast<char*>(pIosData + 1);
+    iFrameLen += setIosItem(reinterpret_cast<PushIosItem *>(pCurDataBuf), 1, strTokenBin, 32);                                          //item1: token
+    iFrameLen += setIosItem(reinterpret_cast<PushIosItem *>(pCurDataBuf + iFrameLen), 2, 
+                            objData->strMsg.c_str(), static_cast<int>(objData->strMsg.length()));  //item2: payload data
+    iFrameLen += setIosItem(reinterpret_cast<PushIosItem *>(pCurDataBuf + iFrameLen), 3, 
+                            reinterpret_cast<const char*>(&objData->uIdentifier), 4);           //item3: identifier
+    int expired_time = net::sockets::hostToNetwork32(static_cast<uint32_t>(time(NULL) + 86400));
+    iFrameLen += setIosItem(reinterpret_cast<PushIosItem *>(pCurDataBuf + iFrameLen), 4, 
+                            reinterpret_cast<const char*>(&expired_time), 4);                   //item4: expire time
+    iFrameLen += setIosItem(reinterpret_cast<PushIosItem *>(pCurDataBuf + iFrameLen), 5, 
+                            reinterpret_cast<const char*>(&PRIORITY_SEND_IMMEDIATELY), 1);      //item5: priority
 
     pIosData->iFrameLen = net::sockets::hostToNetwork32(iFrameLen);
-    return iFrameLen + sizeof(PushIosData);
+    return iFrameLen + static_cast<int>(sizeof(PushIosData));
 }
 
 #define MAX_TITLE_LEN   50
@@ -319,7 +323,7 @@ int GetUtf8chrlen(unsigned char bdata)
     while (temp & bdata)
     {
         num++;
-        temp = (temp >> 1);
+        temp = static_cast<unsigned char>((temp >> 1));
     }
 
     return num;
@@ -327,11 +331,11 @@ int GetUtf8chrlen(unsigned char bdata)
 
 void TruncateUTF8(char *str)
 {
-    int iLen = strlen(str);
+    int iLen = static_cast<int>(strlen(str));
 
     iLen--;
 
-    while (iLen > 0 && !UTF8_validate((unsigned char *)str + iLen, GetUtf8chrlen(str[iLen])))
+    while (iLen > 0 && !UTF8_validate(reinterpret_cast<unsigned char*>(str + iLen), GetUtf8chrlen(str[iLen])))
     {
         iLen--;
     }
@@ -351,7 +355,7 @@ std::string GenPayloadData(CommonItem* objData)
     std::string payloadJsonStr;
     int iBadgeNum = objData->m_iBadgeNum;
 
-    StockItem* tempData = (StockItem*)objData;
+    StockItem* tempData = reinterpret_cast<StockItem*>(objData);
     snprintf(strBuf, sizeof(strBuf), ",\"%s\":\"%s\"", "ID", tempData->m_strNewsID.c_str());
     strExtend += strBuf;
 
@@ -371,7 +375,7 @@ std::string GenPayloadData(CommonItem* objData)
     strExtend += strBuf;
 
     // truncate content
-    int iLen = MAX_PUSH_LEN - strExtend.length() - PUSH_BASE_LEN;
+    int iLen = MAX_PUSH_LEN - static_cast<int>(strExtend.length()) - PUSH_BASE_LEN;
     if ((iLen >= 3) && (objData->m_strContent.length() >= static_cast<size_t>(iLen)))
     {
         snprintf(strBuf, sizeof(strBuf), "%s", objData->m_strContent.c_str());
@@ -565,7 +569,7 @@ int main(int argc, char* argv[])
     net::SslContext sslCtx;
     sslCtx.init("", argv[3], argv[4], argv[5]);
     net::EventLoop loop;
-    net::InetAddress serverAddr(atoi(argv[2]));
+    net::InetAddress serverAddr(static_cast<uint16_t>(atoi(argv[2])));
     if (!net::InetAddress::resolve(argv[1], &serverAddr))
     {
         LOG_FATAL << "net::InetAddress::resolve";
