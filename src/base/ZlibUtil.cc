@@ -24,11 +24,12 @@ bool ZlibUtil::compressData(const char* src, size_t len, std::string* ret)
 	if (code != Z_OK)
 	{
 		LOG_ERROR << "compress failed: " << code;
+        delete[] buf;
 		return false;
 	}
 
 	ret->assign(buf, boundLen);
-	delete buf;
+	delete[] buf;
 	return true;
 }
 
