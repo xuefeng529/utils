@@ -60,7 +60,7 @@ size_t HttpClient::handleResponse(void* buf, size_t size, size_t nmemb, void* ct
     if (ctx != NULL)
     {
         std::string* response = static_cast<std::string*>(ctx);
-        response->assign(static_cast<const char*>(buf), realSize);
+        response->append(static_cast<const char*>(buf), realSize);
     }
     
     return realSize;
