@@ -108,8 +108,9 @@ void EventLoop::handleEvent(struct bufferevent* bev, short events, void* ctx)
 	}
 }
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(const std::string& name)
 	: base_(event_base_new()),
+      name_(name.empty() ? "unknown" : name),
 	  threadId_(base::CurrentThread::tid()),
       pendingFunctors_(new PendingFunctorQueue()),
 	  timerQueue_(new TimerQueue(this))
@@ -241,8 +242,9 @@ void EventLoop::queueInLoop(const Functor& cb)
         }*/
 	while (!pendingFunctors_->push(cb))
 	{
-        LOG_WARN << "pending functors queue is full";
-        sched_yield();
+        LOG_WARN << "pending functors queue is full in loop " << name_;
+        sleep(1);
+        //sched_yield();
 	}
 	
 	wakeup();

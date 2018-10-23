@@ -9,6 +9,7 @@ namespace net
 EventLoopThread::EventLoopThread(const ThreadInitCallback& cb,
 								 const std::string& name)
 	: loop_(NULL),
+      name_(name),
 	  exiting_(false),
 	  thread_(boost::bind(&EventLoopThread::threadFunc, this), name),
 	  mutex_(),
@@ -45,21 +46,21 @@ EventLoop* EventLoopThread::startLoop()
 
 void EventLoopThread::threadFunc()
 {
-	EventLoop loop;
+    EventLoop loop(name_);
 
-	if (callback_)
-	{
-		callback_(&loop);
-	}
+    if (callback_)
+    {
+        callback_(&loop);
+    }
 
-	{
-	  base::MutexLockGuard lock(mutex_);
-	  loop_ = &loop;
-	  cond_.notify();
-	}
+    {
+        base::MutexLockGuard lock(mutex_);
+        loop_ = &loop;
+        cond_.notify();
+    }
 
-	loop.loop();
-	loop_ = NULL;
+    loop.loop();
+    loop_ = NULL;
 }
 
 } // namespace net

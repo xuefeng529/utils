@@ -35,7 +35,7 @@ class EventLoop : boost::noncopyable
 public:
 	typedef boost::function<void()> Functor;
 
-	EventLoop();
+	EventLoop(const std::string& name = std::string());
 	~EventLoop();
 
 	void loop();
@@ -75,6 +75,7 @@ private:
 	void quitInLoop();
 
 	struct event_base* base_;
+    const std::string name_;
 	const pid_t threadId_;
 	//base::MutexLock mutex_;
 	//std::vector<Functor> pendingFunctors_;

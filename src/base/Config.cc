@@ -58,7 +58,7 @@ int Config::parseValue(char *str, char *key, char *val)
 	{
 		value++;
 	}
-	p = strchr(value, '#');
+	/*p = strchr(value, '#');
 	if (p == NULL)
 	{
 		p = value + strlen(value);
@@ -67,7 +67,7 @@ int Config::parseValue(char *str, char *key, char *val)
 	{
 		p--;
 	}
-	(*p) = '\0';
+	(*p) = '\0';*/
 	if (name[0] == '\0')
 	{
 		return -2;
@@ -218,6 +218,18 @@ bool Config::getInt32(const std::string& section, const std::string& key, int32_
 	return true;
 }
 
+bool Config::getInt64(const std::string& section, const std::string& key, int64_t* value) const
+{
+    std::string strVal;
+    if (!getString(section, key, &strVal))
+    {
+        return false;
+    }
+
+    *value = base::StringUtil::strToInt64(strVal);
+    return true;
+}
+
 bool Config::getInt32List(const std::string& section, const std::string& key, std::vector<int32_t>* values) const
 {
 	std::vector<std::string> strVals;
@@ -231,6 +243,21 @@ bool Config::getInt32List(const std::string& section, const std::string& key, st
 		values->push_back(base::StringUtil::strToInt32(strVals[i]));
 	}
 	return true;
+}
+
+bool Config::getInt64List(const std::string& section, const std::string& key, std::vector<int32_t>* values) const
+{
+    std::vector<std::string> strVals;
+    if (!getStringList(section, key, &strVals))
+    {
+        return false;
+    }
+
+    for (size_t i = 0; i < strVals.size(); i++)
+    {
+        values->push_back(base::StringUtil::strToInt64(strVals[i]));
+    }
+    return true;
 }
 
 void Config::getSectionNames(std::vector<std::string>* sections) const

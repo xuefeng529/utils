@@ -20,8 +20,10 @@ public:
 	/// 取section下，相同key的所有值
 	bool getStringList(const std::string& section, const std::string& key, std::vector<std::string>* values) const;
 	bool getInt32(const std::string& section, const std::string& key, int32_t* value) const;
+    bool getInt64(const std::string& section, const std::string& key, int64_t* value) const;
 	/// 取section下，相同key的所有值
 	bool getInt32List(const std::string& section, const std::string& key, std::vector<int32_t>* values) const;
+    bool getInt64List(const std::string& section, const std::string& key, std::vector<int32_t>* values) const;
 	/// 取所有section的名字
 	void getSectionNames(std::vector<std::string>* sections) const;
 	/// 取section下所有的key

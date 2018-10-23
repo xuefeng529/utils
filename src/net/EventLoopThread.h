@@ -26,6 +26,7 @@ private:
 	void threadFunc();
 
 	EventLoop* loop_;
+    const std::string name_;
 	bool exiting_;
 	base::Thread thread_;
 	base::MutexLock mutex_;
