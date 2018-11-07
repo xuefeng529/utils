@@ -45,3 +45,5 @@ target_link_libraries(Regex_test base)
 
 add_executable(LockFree_test LockFree_test.cc)
 target_link_libraries(LockFree_test base)
+
+add_executable(SortedSet_test SortedSet_test.cc)
