@@ -81,10 +81,10 @@ void LeaderSelector::watchThreadFunc()
         /// 监控目录下子节点变化
         do 
         {
-            if (!cli->get(url, timeout_, &response, NULL, false))
+            if (!cli->get(url, timeout_, &response))
             {
                 /// 28 timeout
-                if (cli->code() != 28)
+                if (cli->statusCode() != 28)
                 {
                     break;
                 }
