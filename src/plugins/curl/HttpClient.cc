@@ -107,6 +107,7 @@ bool HttpClient::get(const std::string& url, int timeout, std::string* response)
         }
     }
        
+    response->clear();
     curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
     /// tell libcurl to follow redirection
@@ -167,6 +168,7 @@ bool HttpClient::post(const std::string& url, const std::string& data, int timeo
         }
     }
        
+    response->clear();
     curl_easy_setopt(curl_, CURLOPT_POST, 1L);
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());   
     curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);    
@@ -225,6 +227,7 @@ bool HttpClient::put(const std::string& url, const std::string& data, int timeou
         }
     }
    
+    response->clear();
     curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "PUT");
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());  
     curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
@@ -283,6 +286,7 @@ bool HttpClient::del(const std::string& url, int timeout, std::string* response)
         }
     }
    
+    response->clear();
     curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
     curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl_, CURLOPT_FOLLOWLOCATION, 1L);
