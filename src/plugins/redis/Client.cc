@@ -131,6 +131,30 @@ bool Client::ping()
     }
 }
 
+Status Client::exists(const std::string& key, bool* val)
+{
+    assert(ctx_ != NULL);
+    assert(val != NULL);
+    redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "EXISTS %s", key.c_str()));
+    Status status(ctx_, reply);
+    if (!status.ok())
+    {
+        LOG_ERROR << "EXISTS " << key << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_INTEGER)
+        {
+            *val = (reply->integer == 1 ? true : false);
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
 Status Client::expire(const std::string& key, int ttl)
 {
     assert(ctx_ != NULL);
@@ -249,6 +273,31 @@ Status Client::incr(const std::string& key, int64_t incrby, int64_t* ret)
         if (reply->type == REDIS_REPLY_INTEGER)
         {
             *ret = reply->integer;
+        }
+
+        freeReplyObject(reply);
+    }
+
+    return status;
+}
+
+Status Client::hexists(const std::string& key, const std::string& field, bool* val)
+{
+    assert(ctx_ != NULL);
+    assert(val != NULL);
+    redisReply* reply = static_cast<redisReply*>(
+        redisCommand(ctx_, "HEXISTS %s %s", key.c_str(), field.c_str()));
+    Status status(ctx_, reply);
+    if (!status.ok())
+    {
+        LOG_ERROR << "HEXISTS " << key << " " << field << " [" << status.errstr() << "]";
+    }
+
+    if (reply != NULL)
+    {
+        if (reply->type == REDIS_REPLY_INTEGER)
+        {
+            *val = (reply->integer == 1 ? true : false);
         }
 
         freeReplyObject(reply);

@@ -40,6 +40,7 @@ public:
 
     /// Key
     /// @ttl 秒
+    Status exists(const std::string& key, bool* val);
     Status expire(const std::string& key, int ttl);
     Status del(const std::string& key);
 
@@ -50,6 +51,7 @@ public:
     Status incr(const std::string& key, int64_t incrby, int64_t* ret);
 
     /// Hash
+    Status hexists(const std::string& key, const std::string& field, bool* val);
     Status hset(const std::string& key, const std::string& field, const std::string& val);
     Status hmset(const std::string& key, const std::map<std::string, std::string>& fvs);
     Status hget(const std::string& key, const std::string& field, std::string* val);
