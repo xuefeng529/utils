@@ -2,6 +2,7 @@
 #define NET_TCPCLIENT_H
 
 #include "base/Mutex.h"
+#include "base/CountDownLatch.h"
 #include "net/TcpConnection.h"
 
 namespace net
@@ -24,10 +25,11 @@ public:
 
 	~TcpClient();     
 
-	void connect();
+	void connect();	
 	void disconnect();
+	void syncConnect();
+	void syncDisconnect();
 
-	/// 避免使用
 	void send(const BufferPtr& message);
 	void send(const char* message);
 	void send(const std::string& message);
@@ -52,7 +54,7 @@ public:
 	void setHearbeatCallback(const HearbeatCallback& cb)
 	{ hearbeatCallback_ = cb; }
 	
-	/// 避免使用
+	/// 閬垮厤浣跨敤
 	TcpConnectionPtr connection()
 	{
 		base::MutexLockGuard lock(mutex_);
@@ -95,6 +97,7 @@ private:
 	time_t retryDelayS_;
 	bool retry_;
     SslContext* sslCtx_;
+	boost::scoped_ptr<base::CountDownLatch> connectionLatch_;
 };
 
 } // namespace net

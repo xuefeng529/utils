@@ -50,7 +50,6 @@ TcpClient::~TcpClient()
 {
 	LOG_DEBUG << "TcpClient::dtor[" << name_
 		<< "] - connector " << get_pointer(connector_);
-    base::MutexLockGuard lock(mutex_);
     if (connection_)
     {
         loop_->runInLoop(boost::bind(&TcpConnection::connectDestroyed, connection_));
@@ -62,17 +61,32 @@ void TcpClient::connect()
 	loop_->runInLoop(boost::bind(&TcpClient::connectInLoop, this));
 }
 
-void TcpClient::connectInLoop()
-{
-	loop_->assertInLoopThread();
-	connect_ = true;
-	retryDelayS_ = kInitRetryDelayS;
-	connector_->restart();
-}
-
 void TcpClient::disconnect()
 {
 	loop_->runInLoop(boost::bind(&TcpClient::disconnectInLoop, this));
+}
+
+void TcpClient::syncConnect()
+{
+	loop_->runInLoop(boost::bind(&TcpClient::connectInLoop, this));
+	connectionLatch_.reset(new base::CountDownLatch(1));
+	connectionLatch_->wait();
+}
+
+void TcpClient::syncDisconnect()
+{
+	loop_->runInLoop(boost::bind(&TcpClient::disconnectInLoop, this));
+	connectionLatch_.reset(new base::CountDownLatch(1));
+	connectionLatch_->wait();
+}
+
+void TcpClient::connectInLoop()
+{
+	loop_->assertInLoopThread();
+	assert(!connect_);
+	connect_ = true;
+	retryDelayS_ = kInitRetryDelayS;
+	connector_->restart();
 }
 
 void TcpClient::disconnectInLoop()
@@ -221,6 +235,11 @@ void TcpClient::newConnection(int sockfd)
     {
         conn->connectEstablished();
     }
+
+	if (connectionLatch_->getCount() > 0)
+	{
+		connectionLatch_->countDown();
+	}
 }
 
 void TcpClient::connectingFailed()
@@ -250,6 +269,11 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn)
 	if (connect_ && retry_)
 	{
 		connectingFailed();
+	}
+
+	if (connectionLatch_->getCount() > 0)
+	{
+		connectionLatch_->countDown();
 	}
 }
 
