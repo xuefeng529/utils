@@ -1,4 +1,4 @@
-#include "base/Logging.h"
+#include <boost/noncopyable.hpp>
 
 #include <curl/curl.h>
 
@@ -15,10 +15,11 @@ public:
         CURLcode res = curl_global_init(CURL_GLOBAL_ALL);
         if (res != CURLE_OK)
         {
-            LOG_ERROR << "url_global_init()";
-            sleep(3);
+			fprintf(stderr, "url_global_init failed\n");           
             abort();
         }
+
+		fprintf(stdout, "libcurl version: %s\n", curl_version());
     }
 
     ~CurlInitializer()
