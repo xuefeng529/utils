@@ -26,10 +26,10 @@ set(CXX_FLAGS
  -Wwrite-strings
  #-march=native
  # -MMD
- # -std=c++0x
+ -std=c++0x
  -rdynamic
  #-DTHREADED
- -DEVENT_LOOP_QUEUE_SIZE=1000000
+ -DEVENT_LOOP_QUEUE_SIZE=5000000
  )
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CXX_FLAGS}")
 
@@ -70,4 +70,4 @@ add_subdirectory(plugins/redis)
 add_subdirectory(plugins/zk)
 add_subdirectory(plugins/etcd)
 add_subdirectory(plugins/curl)
-#add_subdirectory(examples)
+add_subdirectory(framework)
