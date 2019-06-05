@@ -236,7 +236,7 @@ void TcpClient::newConnection(int sockfd)
         conn->connectEstablished();
     }
 
-	if (connectionLatch_->getCount() > 0)
+	if (connectionLatch_ && connectionLatch_->getCount() > 0)
 	{
 		connectionLatch_->countDown();
 	}
@@ -271,7 +271,7 @@ void TcpClient::removeConnection(const TcpConnectionPtr& conn)
 		connectingFailed();
 	}
 
-	if (connectionLatch_->getCount() > 0)
+	if (connectionLatch_ && connectionLatch_->getCount() > 0)
 	{
 		connectionLatch_->countDown();
 	}

@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <curl/curl.h>
+#include <assert.h>
 
 namespace plugins
 {
@@ -139,7 +140,8 @@ size_t HttpClient::handleResponse(void* buf, size_t size, size_t nmemb, void* ct
 }
 
 HttpClient::HttpClient(bool keepalive)
-    : curl_(keepalive ? curl_easy_init() : NULL),
+    : curl_(NULL),
+	  curlHeaders_(NULL),
 	  enabledDebug_(false),
 	  enabledHttp2_(false),
       keepalive_(keepalive),	
@@ -166,228 +168,67 @@ bool HttpClient::get(const std::string& url,
 					 std::string* response,
 					 std::map<std::string, std::string>* responseHeaders)
 {
-    if (keepalive_)
-    {
-        if (curl_ == NULL)
-        {
-            strerror_ = "curl_easy_init failed";
-            return false;
-        }
-
-        curl_easy_reset(curl_);
-    }
-    else
-    {
-        curl_ = curl_easy_init();
-        if (curl_ == NULL)
-        {           
+	if (curl_ == NULL)
+	{
+		curl_ = curl_easy_init();
+		if (curl_ == NULL)
+		{
 			strerror_ = "curl_easy_init failed";
-            return false;
-        }
-    }
-       
-    response->clear();
-	setDebug();
-	setHttp2();
-	setSsl();
-    curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
-    curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
-	struct curl_slist* requestHeaders = setRequestHeaders();
-	if (responseHeaders != NULL)
-	{
-		curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleResponseHeaders);
-		curl_easy_setopt(curl_, CURLOPT_HEADERDATA, responseHeaders);
+			return false;
+		}
+
+		resetConstOpt();	
 	}
 
-    if (response != NULL)
-    {
-        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
-    }
-    
-    if (timeout != 0)
-    {
-        /// complete within timeout seconds
-        curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
-        curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-    }
-
-    CURLcode res = curl_easy_perform(curl_);
-	if (res != CURLE_OK)
-	{
-		strerror_ = curl_easy_strerror(res);		
-	}
-	else
-	{
-		curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode_);
-	}
-	
-	if (requestHeaders != NULL)
-    {
-		curl_slist_free_all(requestHeaders);
-    }
-
-    if (!keepalive_)
-    {
-        curl_easy_cleanup(curl_);
-        curl_ = NULL;
-    }
-   
-    return (res == CURLE_OK);
+	resetCommonOpt(url, timeout, response, responseHeaders);
+	resetGetOpt();
+	return exec();
 }
 
 bool HttpClient::post(const std::string& url,
-					  const std::string& data,
+					  const std::string& body,
 					  int timeout,
 					  std::string* response,
 					  std::map<std::string, std::string>* responseHeaders)
 {
-    if (keepalive_)
-    {
-        if (curl_ == NULL)
-        {
-            strerror_ = "curl_easy_init failed";
-            return false;
-        }
-
-        curl_easy_reset(curl_);
-    }
-    else
-    {
-        curl_ = curl_easy_init();
-        if (curl_ == NULL)
-        {
+	if (curl_ == NULL)
+	{
+		curl_ = curl_easy_init();
+		if (curl_ == NULL)
+		{
 			strerror_ = "curl_easy_init failed";
-            return false;
-        }
-    }
-       
-    response->clear();
-	setDebug();
-	setHttp2();
-	setSsl();
-	curl_easy_setopt(curl_, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
-	struct curl_slist* requestHeaders = setRequestHeaders();
-    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, data.data()); 
-    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, data.size());
-	if (responseHeaders != NULL)
-	{
-		curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleResponseHeaders);
-		curl_easy_setopt(curl_, CURLOPT_HEADERDATA, responseHeaders);
+			return false;
+		}
+
+		resetConstOpt();
 	}
 
-    if (response != NULL)
-    {
-        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
-    }
-    
-    if (timeout != 0)
-    {
-        curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
-        curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-    }
-
-    CURLcode res = curl_easy_perform(curl_);
-	if (res != CURLE_OK)
-	{
-		strerror_ = curl_easy_strerror(res);	
-	}
-	else
-	{
-		curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode_);
-	}
-
-	if (requestHeaders != NULL)
-    {
-		curl_slist_free_all(requestHeaders);
-    }
-
-    if (!keepalive_)
-    {
-        curl_easy_cleanup(curl_);
-        curl_ = NULL;
-    }
-
-    return (res == CURLE_OK);
+	resetCommonOpt(url, timeout, response, responseHeaders);
+	resetPostOpt(body);
+	return exec();
 }
 
 bool HttpClient::put(const std::string& url,
-					 const std::string& data,
+					 const std::string& body,
 					 int timeout,
 					 std::string* response,
 					 std::map<std::string, std::string>* responseHeaders)
 {
-    if (keepalive_)
-    {
-        if (curl_ == NULL)
-        {
-            strerror_ = "curl_easy_init failed";
-            return false;
-        }
-
-        curl_easy_reset(curl_);
-    }
-    else
-    {
-        curl_ = curl_easy_init();
-        if (curl_ == NULL)
-        {
+	if (curl_ == NULL)
+	{
+		curl_ = curl_easy_init();
+		if (curl_ == NULL)
+		{
 			strerror_ = "curl_easy_init failed";
-            return false;
-        }
-    }
-   
-    response->clear();
-	setDebug();
-	setHttp2();
-	setSsl();
-    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_easy_setopt(curl_, CURLOPT_URL, url.c_str()); 
-	struct curl_slist* requestHeaders = setRequestHeaders();
-    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, data.data());
-    curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, data.size());
-	if (responseHeaders != NULL)
-	{
-		curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleResponseHeaders);
-		curl_easy_setopt(curl_, CURLOPT_HEADERDATA, responseHeaders);
+			return false;
+		}
+
+		resetConstOpt();
 	}
 
-    if (response != NULL)
-    {
-        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
-    }
-
-    if (timeout != 0)
-    {
-        curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
-        curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-    }
-
-    CURLcode res = curl_easy_perform(curl_);
-	if (res != CURLE_OK)
-	{
-		strerror_ = curl_easy_strerror(res);
-	}
-	else
-	{
-		curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode_);
-	}
-	
-	if (requestHeaders != NULL)
-    {
-		curl_slist_free_all(requestHeaders);
-    }
-
-    if (!keepalive_)
-    {
-        curl_easy_cleanup(curl_);
-        curl_ = NULL;
-    }
-
-    return (res == CURLE_OK);
+	resetCommonOpt(url, timeout, response, responseHeaders);
+	resetPutOpt(body);
+	return exec();
 }
 
 bool HttpClient::del(const std::string& url,
@@ -395,94 +236,37 @@ bool HttpClient::del(const std::string& url,
 					 std::string* response,
 					 std::map<std::string, std::string>* responseHeaders)
 {
-    if (keepalive_)
-    {
-        if (curl_ == NULL)
-        {
-            strerror_ = "curl_easy_init failed";
-            return false;
-        }
-
-        curl_easy_reset(curl_);
-    }
-    else
-    {
-        curl_ = curl_easy_init();
-        if (curl_ == NULL)
-        {
+	if (curl_ == NULL)
+	{
+		curl_ = curl_easy_init();
+		if (curl_ == NULL)
+		{
 			strerror_ = "curl_easy_init failed";
-            return false;
-        }
-    }
-   
-    response->clear();
-	setDebug();
-	setHttp2();
-	setSsl();
-    curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
-    curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
-	struct curl_slist* requestHeaders = setRequestHeaders();
-	if (responseHeaders != NULL)
-	{
-		curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleResponseHeaders);
-		curl_easy_setopt(curl_, CURLOPT_HEADERDATA, responseHeaders);
+			return false;
+		}
+
+		resetConstOpt();
 	}
 
-    if (response != NULL)
-    {
-        curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
-        curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
-    }
-
-    if (timeout != 0)
-    {
-        curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
-        curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
-    }
-
-    CURLcode res = curl_easy_perform(curl_);
-	if (res != CURLE_OK)
-	{
-		strerror_ = curl_easy_strerror(res);
-	}
-	else
-	{
-		curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode_);
-	}
-
-	if (requestHeaders != NULL)
-    {
-		curl_slist_free_all(requestHeaders);
-    }
-
-    if (!keepalive_)
-    {
-        curl_easy_cleanup(curl_);
-        curl_ = NULL;
-    }
-
-    return (res == CURLE_OK);
+	resetCommonOpt(url, timeout, response, responseHeaders);
+	resetDelOpt();
+	return exec();
 }
 
-void HttpClient::setDebug()
+void HttpClient::resetConstOpt()
 {
+	assert(curl_ != NULL);
 	if (enabledDebug_)
 	{
 		curl_easy_setopt(curl_, CURLOPT_VERBOSE, 1L);
 		curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, handleDebug);
 	}
-}
 
-void HttpClient::setHttp2()
-{
 	if (enabledHttp2_)
 	{
 		curl_easy_setopt(curl_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
 	}
-}
 
-void HttpClient::setSsl()
-{
 	if (!caFile_.empty())
 	{
 		/// 验证服务器证书有效性
@@ -506,36 +290,113 @@ void HttpClient::setSsl()
 	{
 		/// 客户端证书私钥密码
 		curl_easy_setopt(curl_, CURLOPT_SSLCERTPASSWD, keyPassword_.c_str());
-	}
+	}	
 }
 
-struct curl_slist* HttpClient::setRequestHeaders()
+void HttpClient::resetCommonOpt(const std::string& url,
+							    int timeout,
+							    std::string* response,
+								std::map<std::string, std::string>* responseHeaders)
+								
 {
-    struct curl_slist *headerList = NULL;
-    if (keepalive_)
-    {
-        /// enable TCP keep-alive for this transfer
-        curl_easy_setopt(curl_, CURLOPT_TCP_KEEPALIVE, 1L);
-        /// keep-alive idle time to kTcpKeepIdle seconds
-        curl_easy_setopt(curl_, CURLOPT_TCP_KEEPIDLE, kTcpKeepIdle);
-        /// interval time between keep-alive probes: kTcpKeepIntv seconds
-        curl_easy_setopt(curl_, CURLOPT_TCP_KEEPINTVL, kTcpKeepIntv);
-        headerList = curl_slist_append(headerList, "Connection: keep-alive");
-    }
-    else
-    {
-        headerList = curl_slist_append(headerList, "Connection: close");
-    }
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_URL, url.c_str());
+	if (timeout != 0)
+	{
+		curl_easy_setopt(curl_, CURLOPT_TIMEOUT, timeout);
+		curl_easy_setopt(curl_, CURLOPT_NOSIGNAL, 1L);
+	}
+
+	if (responseHeaders != NULL)
+	{
+		curl_easy_setopt(curl_, CURLOPT_HEADERFUNCTION, handleResponseHeaders);
+		curl_easy_setopt(curl_, CURLOPT_HEADERDATA, responseHeaders);
+	}
+
+	if (response != NULL)
+	{
+		curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, handleResponse);
+		curl_easy_setopt(curl_, CURLOPT_WRITEDATA, response);
+	}
+
+	assert(curlHeaders_ == NULL);
+	if (keepalive_)
+	{
+		/// enable TCP keep-alive for this transfer
+		curl_easy_setopt(curl_, CURLOPT_TCP_KEEPALIVE, 1L);
+		/// keep-alive idle time to kTcpKeepIdle seconds
+		curl_easy_setopt(curl_, CURLOPT_TCP_KEEPIDLE, kTcpKeepIdle);
+		/// interval time between keep-alive probes: kTcpKeepIntv seconds
+		curl_easy_setopt(curl_, CURLOPT_TCP_KEEPINTVL, kTcpKeepIntv);
+		curlHeaders_ = curl_slist_append(curlHeaders_, "Connection: keep-alive");
+	}
+	else
+	{
+		curlHeaders_ = curl_slist_append(curlHeaders_, "Connection: close");
+	}
 
 	std::map<std::string, std::string>::const_iterator it = requestHeaders_.begin();
 	for (; it != requestHeaders_.end(); ++it)
-    {
-        std::string header = it->first + ": " + it->second;
-		headerList = curl_slist_append(headerList, header.c_str());
-    }
+	{
+		std::string header = it->first + ": " + it->second;
+		curlHeaders_ = curl_slist_append(curlHeaders_, header.c_str());
+	}
 
-    curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headerList);
-    return headerList;
+	curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, curlHeaders_);
+}
+
+void HttpClient::resetGetOpt()
+{
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1L);
+}
+
+void HttpClient::resetPostOpt(const std::string& body)
+{
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_POST, 1L);
+	curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body.data());
+	curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, body.size());
+}
+
+void HttpClient::resetPutOpt(const std::string& body)
+{
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "PUT");
+	curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, body.data());
+	curl_easy_setopt(curl_, CURLOPT_POSTFIELDSIZE, body.size());
+}
+
+void HttpClient::resetDelOpt()
+{
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
+}
+
+bool HttpClient::exec()
+{
+	assert(curl_ != NULL);
+	assert(curlHeaders_ != NULL);
+	CURLcode res = curl_easy_perform(curl_);
+	if (res != CURLE_OK)
+	{
+		strerror_ = curl_easy_strerror(res);
+	}
+	else
+	{
+		curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &statusCode_);
+	}
+
+	curl_slist_free_all(curlHeaders_);
+	curlHeaders_ = NULL;
+
+	if (!keepalive_)
+	{
+		curl_easy_cleanup(curl_);
+		curl_ = NULL;
+	}
+
+	return (res == CURLE_OK);
 }
 
 } // namespace curl

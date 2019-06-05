@@ -29,6 +29,9 @@ public:
 		keyPassword_ = password;
 	}
 
+	const std::string& getCertFile() const { return certFile_; }
+	const std::string& getKeyFile() const { return keyFile_; }
+
     void setHeader(const std::string& name, const std::string& value);
     /// @timeout 0 invalid
 	bool get(const std::string& url, 
@@ -37,13 +40,13 @@ public:
 			 std::map<std::string, std::string>* responseHeaders = NULL);
 
     bool post(const std::string& url, 
-			  const std::string& data, 
+			  const std::string& body, 
 			  int timeout, 
 		      std::string* response, 
 		      std::map<std::string, std::string>* responseHeaders = NULL);
 
 	bool put(const std::string& url,
-			 const std::string& data,
+			 const std::string& body,
 			 int timeout,
 			 std::string* response,
 			 std::map<std::string, std::string>* responseHeaders = NULL);
@@ -61,12 +64,20 @@ private:
 	static size_t handleResponseHeaders(void* buf, size_t size, size_t nmemb, void* ctx);
     static size_t handleResponse(void* buf, size_t size, size_t nmemb, void* ctx);
     
-	void setDebug();
-	void setHttp2();
-	void setSsl();
-    struct curl_slist* setRequestHeaders();
+	void resetConstOpt();
+	void resetCommonOpt(const std::string& url,
+						int timeout,
+						std::string* response,
+						std::map<std::string, std::string>* responseHeaders);
+
+	void resetGetOpt();
+	void resetPostOpt(const std::string& body);
+	void resetPutOpt(const std::string& body);
+	void resetDelOpt();
+	bool exec();
 	
     CURL *curl_;
+	struct curl_slist* curlHeaders_;
 
 	bool enabledDebug_;
 	bool enabledHttp2_;

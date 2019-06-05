@@ -1,4 +1,5 @@
 #include "plugins/curl/HttpClient.h"
+#include "plugins/curl/MultiHttpClient.h"
 #include "base/StringUtil.h"
 #include "base/Logging.h"
 
@@ -17,9 +18,38 @@ void parse(const std::string& cmd, std::map<std::string, std::string>* kvs)
     }
 }
 
+void testMulti()
+{
+	MultiHttpClient cli(true);
+	std::vector<MultiHttpClient::Request> reqs;
+	for (int i = 0; i < 3; i++)
+	{
+		MultiHttpClient::Request req;
+		req.url = "http://172.16.56.27:9999/";
+		reqs.push_back(req);
+	}
+
+	std::vector<MultiHttpClient::Result> results;
+	if (!cli.post(reqs, &results))
+	{
+		LOG_ERROR << "post failed: " << cli.strerror();
+	}
+	else
+	{
+		for (size_t i = 0; i < reqs.size(); ++i)
+		{
+			LOG_INFO << "post success, response: " << results[i].response;
+		}
+	}
+
+	std::string line;
+	std::getline(std::cin, line);
+}
+
 int main(int argc, char* argv[])
 {   
-    HttpClient cli(true);
+	testMulti();
+    /*HttpClient cli(true);
     std::string line;    
     while (std::getline(std::cin, line))
     {         
@@ -52,7 +82,7 @@ int main(int argc, char* argv[])
         {
             LOG_WARN << "unknow url: " << url;
         }
-    }
+    }*/
 
     return 0;
 }
