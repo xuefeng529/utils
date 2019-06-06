@@ -121,6 +121,7 @@ public:
 		std::string s(data_, size_);
 		data_ += size_;
 		size_ = 0;
+		return s;
 	}
 
 private:
