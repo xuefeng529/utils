@@ -12,19 +12,17 @@ namespace net
 namespace
 {
 
-pthread_mutex_t* g_sslLocks;
-long* g_sslLocksCount;
+pthread_mutex_t* g_sslLocks = NULL;
 
-void lockingCallback(int mode, int type, const char* file, int line)
+void lockingCallback(int mode, int n, const char* file, int line)
 {
     if (mode & CRYPTO_LOCK)
     {
-        pthread_mutex_lock(&(g_sslLocks[type]));
-        g_sslLocksCount[type]++;
+        pthread_mutex_lock(&(g_sslLocks[n]));
     }
     else
     {
-        pthread_mutex_unlock(&(g_sslLocks[type]));
+        pthread_mutex_unlock(&(g_sslLocks[n]));
     }
 }
 
@@ -36,11 +34,10 @@ unsigned long threadIdCallback(void)
 void threadSetup()
 {    
     g_sslLocks = static_cast<pthread_mutex_t*>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t)));
-    g_sslLocksCount = static_cast<long*>(OPENSSL_malloc(CRYPTO_num_locks() * sizeof(long)));
     for (int i = 0; i < CRYPTO_num_locks(); i++)
     {
-        g_sslLocksCount[i] = 0;
         pthread_mutex_init(&(g_sslLocks[i]), NULL);
+		LOG_INFO << "init openssl lock, name: " << CRYPTO_get_lock_name(i);
     }
 
     CRYPTO_set_id_callback(threadIdCallback);
@@ -49,14 +46,16 @@ void threadSetup()
 
 void threadCleanup()
 {
-    CRYPTO_set_locking_callback(NULL);
+	CRYPTO_set_id_callback(NULL);
+	CRYPTO_set_locking_callback(NULL);
     for (int i = 0; i < CRYPTO_num_locks(); i++)
     {
         pthread_mutex_destroy(&(g_sslLocks[i]));
-        LOG_INFO << g_sslLocksCount[i] << ": " << CRYPTO_get_lock_name(i);       
+		LOG_INFO << "destroy openssl lock, name: " << CRYPTO_get_lock_name(i);
     }
+
     OPENSSL_free(g_sslLocks);
-    OPENSSL_free(g_sslLocksCount);
+	g_sslLocks = NULL;
 }
 
 }
