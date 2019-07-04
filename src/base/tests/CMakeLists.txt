@@ -47,3 +47,5 @@ add_executable(LockFree_test LockFree_test.cc)
 target_link_libraries(LockFree_test base)
 
 add_executable(SortedSet_test SortedSet_test.cc)
+add_executable(TimingWheel_test TimingWheel_test.cc)
+target_link_libraries(TimingWheel_test base)
