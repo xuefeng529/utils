@@ -1,5 +1,6 @@
 #include "base/TimingWheel.h"
 #include "base/Thread.h"
+#include "base/Logging.h"
 
 #include <boost/bind.hpp>
 
@@ -10,7 +11,7 @@ TimingWheel::TimingWheel(uint64_t tickDuration, uint64_t ticksPerWheel)
 	: tickDuration_(tickDuration),
 	  ticksPerWheel_(ticksPerWheel),
 	  tick_(0),
-	  timeouts_(new TimeoutQueue()),
+	  timeouts_(new TimeoutBufferQueue()),
 	  wheel_(ticksPerWheel),
 	  thread_(new base::Thread(boost::bind(&TimingWheel::timerFunc, this)))
 {
@@ -18,6 +19,10 @@ TimingWheel::TimingWheel(uint64_t tickDuration, uint64_t ticksPerWheel)
 
 TimingWheel::~TimingWheel()
 {
+	if (started_.get() == 1)
+	{
+		stop();
+	}
 }
 
 void TimingWheel::start()
@@ -36,14 +41,22 @@ void TimingWheel::stop()
 	}
 }
 
-bool TimingWheel::addTimeout(const TimerTask& task, uint64_t delay)
+TimingWheel::TimeoutPtr TimingWheel::addTimeout(const TimerTask& task, uint64_t delay, const std::string& name)
 {
-	if (delay / tickDuration_ > ticksPerWheel_)
+	if (delay % tickDuration_ || delay / tickDuration_ > ticksPerWheel_)
 	{
-		return false;
+		LOG_ERROR << "adding timeout errors, name: " << name << ", delay: " << delay;
+		return TimeoutPtr();
 	}
 
-	return timeouts_->push(Timeout(task, delay));
+	TimeoutPtr timeout(new Timeout(task, delay, name));
+	if (!timeouts_->push(timeout))
+	{
+		LOG_WARN << "timeout buffer queue full, name: " << name << ", delay: " << delay;
+		return TimeoutPtr();
+	}
+
+	return timeout;
 }
 
 void TimingWheel::timerFunc()
@@ -58,15 +71,24 @@ void TimingWheel::timerFunc()
 
 void TimingWheel::transferTimeoutsToBuckets()
 {
+	const uint64_t nextTickDeadline = Timestamp::now().microSecondsSinceEpoch() / 1000 + tickDuration_;
 	for (int i = 0; i < 100000; ++i)
 	{
-		Timeout timeout;
+		TimeoutPtr timeout;
 		if (!timeouts_->pop(timeout))
 		{
 			break;
 		}
 
-		uint64_t idx = (tick_ + timeout.delay() / tickDuration_) % ticksPerWheel_;
+		if (timeout->deadline() < nextTickDeadline)
+		{
+			LOG_WARN << "the timeout in buffer queue has expired, name: "
+				<< timeout->name() << ", delay: " << timeout->delay();
+			timeout->expire();
+			continue;
+		}
+
+		uint64_t idx = (tick_ + timeout->delay() / tickDuration_) % ticksPerWheel_;
 		wheel_[idx].push_back(timeout);
 	}
 }
@@ -74,15 +96,11 @@ void TimingWheel::transferTimeoutsToBuckets()
 void TimingWheel::expireTimeouts()
 {
 	tick_ = (tick_ + 1) % ticksPerWheel_;
-	TimerTaskDeque& buckets = wheel_[tick_];
-	TimerTaskDeque::const_iterator it = buckets.begin();
+	TimeoutDeque& buckets = wheel_[tick_];
+	TimeoutDeque::const_iterator it = buckets.begin();
 	for (; it != buckets.end(); ++it)
 	{
-		const TimerTask& task = *it;
-		if (task)
-		{
-			task();
-		}
+		(*it)->expire();
 	}
 
 	buckets.clear();

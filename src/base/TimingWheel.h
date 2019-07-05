@@ -3,10 +3,11 @@
 
 #include "base/LockFree.h"
 #include "base/Atomic.h"
+#include "base/Timestamp.h"
 
-#include <boost/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <deque>
 #include <vector>
 
@@ -23,34 +24,38 @@ public:
 	class Timeout
 	{
 	public:
-		Timeout() {}
-		Timeout(const TimerTask& task, uint64_t delay) : task_(task), delay_(delay) {}
-		Timeout(const Timeout& other) : task_(other.task_), delay_(other.delay_) {}
-		uint64_t delay() const { return delay_; }
-		operator bool() const { return task_; }
-		void operator ()() const
+		Timeout(const TimerTask& task, uint64_t delay, const std::string& name)
+			: task_(task), 
+			  delay_(delay), 
+			  name_(name),
+			  deadline_(Timestamp::now().microSecondsSinceEpoch() / 1000 + delay)
 		{
-			if (task_)
+		}
+		
+		const std::string& name() const { return name_; }	
+		uint64_t delay() const { return delay_; }
+		void cancell() { cancelled_.getAndSet(1); }
+		
+	private:
+		friend class TimingWheel;
+
+		uint64_t deadline() const { return deadline_; }
+		void expire() const
+		{
+			if (cancelled_.get() == 0 && task_)
 			{
 				task_();
 			}
 		}
 
-		Timeout& operator=(const Timeout& other)
-		{
-			if (&other != this)
-			{
-				task_ = other.task_;
-				delay_ = other.delay_;
-			}
-
-			return *this;
-		}
-
-	private:
-		TimerTask task_;
-		uint64_t delay_;
+		const TimerTask task_;
+		const uint64_t delay_;
+		const std::string name_;
+		const uint64_t deadline_;
+		mutable base::AtomicInt32 cancelled_;
 	};
+
+	typedef boost::shared_ptr<Timeout> TimeoutPtr;
 
 	/// @tickDuration: the duration between tick (millisecond)
 	/// @ticksPerWheel: the size of the wheel
@@ -60,7 +65,7 @@ public:
 	void start();
 	void stop();
 
-	bool addTimeout(const TimerTask& task, uint64_t delay);
+	TimeoutPtr addTimeout(const TimerTask& task, uint64_t delay, const std::string& name = std::string());
 
 private:
 	void timerFunc();
@@ -72,11 +77,11 @@ private:
 	const uint64_t ticksPerWheel_;
 	uint64_t tick_;
 
-	typedef base::lockfree::ArrayLockFreeQueue<Timeout, 100000> TimeoutQueue;
-	boost::scoped_ptr<TimeoutQueue> timeouts_;
+	typedef base::lockfree::ArrayLockFreeQueue<TimeoutPtr, 100000> TimeoutBufferQueue;
+	boost::scoped_ptr<TimeoutBufferQueue> timeouts_;
 
-	typedef std::deque<TimerTask> TimerTaskDeque;
-	std::vector<TimerTaskDeque> wheel_;
+	typedef std::deque<TimeoutPtr> TimeoutDeque;
+	std::vector<TimeoutDeque> wheel_;
 	boost::scoped_ptr<Thread> thread_;
 };
 
