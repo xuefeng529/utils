@@ -18,11 +18,15 @@ namespace redis
 class Status
 {
 public:
+	Status();
+	Status(const Status& other);
     Status(const redisContext* ctx, const redisReply* reply);
+	Status& operator=(const Status& other);
+
     bool ok() const;
     bool valid() const;
     std::string errstr() const;
-
+	
 private:
     const redisContext* ctx_;
     const redisReply* reply_;
@@ -99,6 +103,8 @@ public:
     /// List
     Status qpush(const std::string& key, const std::string& val, int64_t* retSize = NULL);
     Status qpush(const std::string& key, const std::vector<std::string>& vals, int64_t* retSize = NULL);
+	Status qlpush(const std::string& key, const std::string& val, int64_t* retSize = NULL);
+	Status qlpush(const std::string& key, const std::vector<std::string>& vals, int64_t* retSize = NULL);
     Status qpop(const std::string& key, std::string* ret);
     Status qrange(const std::string& key, int64_t start, int64_t stop, std::vector<std::string>* ret);
     Status qtrim(const std::string& key, int64_t start, int64_t stop);

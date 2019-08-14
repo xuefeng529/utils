@@ -29,35 +29,59 @@ private:
     redisReply* reply_;
 };
 
+Status::Status()
+	: ctx_(NULL),
+	  reply_(NULL)
+{
+}
+
+Status::Status(const Status& other)
+	: ctx_(other.ctx_),
+	  reply_(other.reply_)
+{
+}
+
 Status::Status(const redisContext* ctx, const redisReply* reply) 
     : ctx_(ctx),
       reply_(reply)
 {
 }
 
+Status& Status::operator=(const Status& other)
+{
+	if (&other != this)
+	{
+		ctx_ = other.ctx_;
+		reply_ = other.reply_;
+	}
+	
+	return *this;
+}
+
 bool Status::ok() const
 {
-    assert(ctx_ != NULL);
     return (reply_ != NULL && reply_->type != REDIS_REPLY_ERROR);
 }
 
 bool Status::valid() const
 {
-    assert(ctx_ != NULL);
-    return (reply_ != NULL && ctx_->err == REDIS_OK);
+    return (ctx_ != NULL && reply_ != NULL && ctx_->err == REDIS_OK);
 }
    
 std::string Status::errstr() const
 {
-    assert(ctx_ != NULL);
     if (reply_ != NULL && reply_->type == REDIS_REPLY_ERROR)
     {
         return std::string(reply_->str, reply_->len);
     }
-    else
+    else if (ctx_ != NULL)
     {
-        return std::string(ctx_->errstr);
+		return ctx_->errstr;
     }
+	else
+	{
+		return "uninitialized redis context";
+	}
 }
 
 Client::Client()
@@ -870,6 +894,58 @@ Status Client::qpush(const std::string& key, const std::vector<std::string>& val
     }
 
     return status;
+}
+
+Status Client::qlpush(const std::string& key, const std::string& val, int64_t* retSize)
+{
+	assert(ctx_ != NULL);
+	redisReply* reply = static_cast<redisReply*>(redisCommand(
+		ctx_, "LPUSH %s %b", key.c_str(), val.data(), val.size()));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "LPUSH " << key << " " << val << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
+		{
+			*retSize = reply->integer;
+		}
+
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
+Status Client::qlpush(const std::string& key, const std::vector<std::string>& vals, int64_t* retSize)
+{
+	assert(ctx_ != NULL);
+	std::vector<std::string> cmd;
+	cmd.push_back("LPUSH");
+	cmd.push_back(key);
+	cmd.insert(cmd.end(), vals.begin(), vals.end());
+	std::string cmdStr;
+	redisReply* reply = wrapCommandArgv(cmd, &cmdStr);
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << cmdStr << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		if (retSize != NULL && reply->type == REDIS_REPLY_INTEGER)
+		{
+			*retSize = reply->integer;
+		}
+
+		freeReplyObject(reply);
+	}
+
+	return status;
 }
 
 Status Client::qpop(const std::string& key, std::string* ret)

@@ -34,7 +34,7 @@ public:
 		
 		const std::string& name() const { return name_; }	
 		uint64_t delay() const { return delay_; }
-		void cancell() { cancelled_.getAndSet(1); }
+		void cancel() { cancelled_.getAndSet(1); }
 		
 	private:
 		friend class TimingWheel;
