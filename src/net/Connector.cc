@@ -22,11 +22,22 @@ void Connector::handleEvent(struct bufferevent* bev, short events, void* ctx)
 	{
         LOG_ERROR << "Connector::handleEvent: " << base::strerror_tl(errno);
 		connector->setState(kDisconnected);	
+		int fd = bufferevent_getfd(connector->bev_);
+		if (fd != -1)
+		{
+			EVUTIL_CLOSESOCKET(fd);
+		}
+		
 		connector->connectingFailedCallback_();
 	}
     else
     {
         LOG_ERROR << "Connector::handleEvent: unknow event," << events;
+		int fd = bufferevent_getfd(connector->bev_);
+		if (fd != -1)
+		{
+			EVUTIL_CLOSESOCKET(fd);
+		}
     }
 
     connector->freeEvent();
