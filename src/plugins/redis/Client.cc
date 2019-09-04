@@ -676,6 +676,57 @@ Status Client::smembers(const std::string& key, std::vector<std::string>* ret)
     return status;
 }
 
+Status Client::scard(const std::string& key, uint64_t* ret)
+{
+	assert(ctx_ != NULL);
+	assert(ret != NULL);
+	redisReply* reply = static_cast<redisReply*>(
+		redisCommand(ctx_, "SCARD  %s", key.c_str()));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "SCARD " << key << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		if (reply->type == REDIS_REPLY_INTEGER)
+		{
+			*ret = reply->integer;
+		}
+
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
+Status Client::spop(const std::string& key, std::string* ret)
+{
+	assert(ctx_ != NULL);
+	redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "SPOP %s", key.c_str()));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "SPOP " << key << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		if (reply->type == REDIS_REPLY_STRING)
+		{
+			if (ret != NULL)
+			{
+				ret->assign(reply->str, reply->len);
+			}
+		}
+
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
 Status Client::sscan(const std::string& key,
                      uint64_t cursor,
                      const std::string& pattern,

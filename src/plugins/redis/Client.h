@@ -82,6 +82,8 @@ public:
     Status sadd(const std::string& key, const std::string& member);
     Status sadd(const std::string& key, const std::vector<std::string>& members);
     Status smembers(const std::string& key, std::vector<std::string>* ret);
+	Status scard(const std::string& key, uint64_t* ret);
+	Status spop(const std::string& key, std::string* ret = NULL);
     /// @cursor 0开始一轮新的迭代
     /// @pattern 为空时不进行模式匹配
     /// @nextCursor 返回0表示本轮迭代完成，否则用返回值继续迭代
