@@ -41,6 +41,7 @@ public:
 
     bool connect(const std::string& ip, int port, const std::string& password);
     bool ping();
+	Status select(int index);
 
     /// Key
     /// @ttl 秒

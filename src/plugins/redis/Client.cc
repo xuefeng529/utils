@@ -155,6 +155,24 @@ bool Client::ping()
     }
 }
 
+Status Client::select(int index)
+{
+	assert(ctx_ != NULL);
+	redisReply* reply = static_cast<redisReply*>(redisCommand(ctx_, "SELECT %d", index));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "SELECT " << index << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
 Status Client::exists(const std::string& key, bool* val)
 {
     assert(ctx_ != NULL);
