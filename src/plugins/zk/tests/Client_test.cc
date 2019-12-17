@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 {
     base::Logger::setLogLevel(base::Logger::DEBUG);
     Client zkClient;
-    if (!zkClient.init("127.0.0.1:1881,127.0.0.1:1882,127.0.0.1:1883", 200)) 
+    if (!zkClient.init(argv[1], atoi(argv[2]))) 
     {
         fprintf(stderr, "ZKClient failed to init...\n");
         return -1;

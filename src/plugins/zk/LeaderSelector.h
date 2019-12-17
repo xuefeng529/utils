@@ -31,6 +31,7 @@ private:
     void handleCreate(ErrorCode code, const std::string& path);
     void handleGetChildren(ErrorCode code, const std::string& path, const std::vector<std::string>& children);
     void handleGet(ErrorCode code, const std::string& path, const std::string& value);
+	void handleSessionTimeout();
 
     bool leader_;
     boost::scoped_ptr<Client> client_;

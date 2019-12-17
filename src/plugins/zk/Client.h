@@ -6,6 +6,7 @@
 #include "base/CountDownLatch.h"
 
 #include <vector>
+#include <boost/scoped_ptr.hpp>
 
 struct Stat;
 struct String_vector;
@@ -15,6 +16,14 @@ namespace plugins
 {
 namespace zk 
 {
+	 
+enum ZkLogLevel
+{ 
+	kZkError = 1,
+	kZkWarn,
+	kZkInfo,
+	kZkDebug
+};
 
 enum ErrorCode
 {
@@ -49,10 +58,10 @@ typedef boost::function <void(ErrorCode, const std::string&, const std::string&)
 typedef boost::function <void(ErrorCode, const std::string&, const NodeStat*)> ExistCallback;
 typedef boost::function <void(ErrorCode, const std::string&, const std::vector<std::string>&)> GetChildrenCallback;
 
-struct WatchContext
+struct Context
 {
-    WatchContext(const std::string& path, bool watch)
-        : path_(path), watch_(watch) {}
+	Context(const std::string& path, bool watch)
+		: path_(path), watch_(watch) {}
 
     const std::string path_;
     const bool watch_;
@@ -71,9 +80,12 @@ public:
     ~Client();
 
     /// @host 127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002
-    bool init(const std::string& host, 
+    bool init(const std::string& hosts, 
               uint32_t sessionTimeout, 
-              const SessionTimeoutCallback& cb = SessionTimeoutCallback());
+              const SessionTimeoutCallback& cb = SessionTimeoutCallback(),
+			  ZkLogLevel logLevel = kZkError);
+
+	bool reconnect();
     bool createPersistent(const std::string& path, const std::string& data, const CreateCallback& cb);
     bool createPersistentSequential(const std::string& path, const std::string& data, const CreateCallback& cb);
     bool createEphemeral(const std::string& path, const std::string& data, const CreateCallback& cb);
@@ -105,12 +117,13 @@ private:
                 const CreateCallback& cb);
     
     bool started_;
-    base::CountDownLatch sessionLatch_;
+    boost::scoped_ptr<base::CountDownLatch> sessionLatch_;
     base::Thread checkSessionThread_;
     zhandle_t* zkHandle_;
     time_t sessionDisconnectMs_;
     mutable base::MutexLock sessionStateLock_;
     int sessionState_;
+	std::string hosts_;
     uint32_t sessionTimeout_;
     SessionTimeoutCallback sessionTimeoutCb_;
 };

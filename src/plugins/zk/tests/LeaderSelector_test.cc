@@ -26,9 +26,8 @@ int main(int argc, char* argv[])
     snprintf(g_nodeName, sizeof(g_nodeName), "%ld-%ld-%d-%d", tv.tv_sec, tv.tv_usec, getpid(), rand());
 
     std::cout << "start ..." << std::endl;
-    plugins::zk::LeaderSelector leaderSelector("127.0.0.1:1881,127.0.0.1:1882,127.0.0.1:1883", 200,
-                                               "/leader_follower", g_nodeName, takeLeader);
-    leaderSelector.start();
+    plugins::zk::LeaderSelector leaderSelector(argv[1], atoi(argv[2]), "/leader_follower_test", g_nodeName, takeLeader);
+	leaderSelector.start(); 
     std::string line;
     std::getline(std::cin, line);
     return 0;

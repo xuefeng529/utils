@@ -29,9 +29,9 @@ LeaderSelector::LeaderSelector(const std::string& host,
 
 void LeaderSelector::start()
 {
-    while (!client_->init(host_, sessionTimeout_))
+	while (!client_->init(host_, sessionTimeout_, boost::bind(&LeaderSelector::handleSessionTimeout, this), kZkError))
     {
-        sleep(1);
+        sleep(3);
     }
 
     client_->createEphemeralSequential(subNode_, name_, boost::bind(&LeaderSelector::handleCreate, this, _1, _2));
@@ -41,8 +41,8 @@ void LeaderSelector::handleCreate(ErrorCode code, const std::string& path)
 {
     if (code == kOk)
     {
-        LOG_INFO << path << " [handleCreate]";
-        /// ²»ÐèÒª¼ì²é·µ»ØÖµ£¬³ý·ÇSESSION_EXPIRED²Å»áÊ§°Ü£¬ÄÇÒ²»á±»»Øµ÷ÍË³ö³ÌÐò
+		LOG_INFO << "@LeaderSelector: create node successfully, path: " << path;
+        /// ä¸éœ€è¦æ£€æŸ¥è¿”å›žå€¼ï¼Œé™¤éžSESSION_EXPIREDæ‰ä¼šå¤±è´¥ï¼Œé‚£ä¹Ÿä¼šè¢«å›žè°ƒé€€å‡ºç¨‹åº
         client_->getChildren(parentNode_, boost::bind(&LeaderSelector::handleGetChildren, this, _1, _2, _3), true);
     }
     else if (code == kError)
@@ -51,13 +51,13 @@ void LeaderSelector::handleCreate(ErrorCode code, const std::string& path)
     }
     else if (code == kNotExist)
     {
-        LOG_ERROR << "You need to create " << parentNode_;
+        LOG_ERROR << "@LeaderSelector: no parent node: " << parentNode_;
         sleep(3);
         exit(0);
     }
     else
     {
-        LOG_WARN << "kExist " << path;
+        LOG_WARN << "@LeaderSelector: the node already exists, path: " << path;
     }
 }
 
@@ -67,17 +67,26 @@ void LeaderSelector::handleGetChildren(ErrorCode code, const std::string& path, 
     {
         if (!leader_)
         {
-            /// ÔÚfollower×´Ì¬²ÅÐèÒª¹Ø×¢leader±ä»¯£¬ÔÚleader×´Ì¬ÎÞÐè¹Ø×¢
-            assert(!children.empty());
+            /// åœ¨followerçŠ¶æ€æ‰éœ€è¦å…³æ³¨leaderå˜åŒ–ï¼Œåœ¨leaderçŠ¶æ€æ— éœ€å…³æ³¨
+			if (children.empty())
+			{
+				return;
+			}
+			
+			for (size_t i = 0; i < children.size(); ++i)
+			{
+				LOG_INFO << "@LeaderSelector: child node: " << children[i];
+			}
+			
             std::vector<std::string> nodes(children);
             std::sort(nodes.begin(), nodes.end());
             std::string leaderNode = parentNode_ + "/" + nodes[0];
-            /// »ñÈ¡leader½ÚµãµÄvalue£¬Óëself_±È½ÏÈ·ÈÏÊÇ·ñ×Ô¼º³ÉÎªleader¡£
+            /// èŽ·å–leaderèŠ‚ç‚¹çš„valueï¼Œä¸Žself_æ¯”è¾ƒç¡®è®¤æ˜¯å¦è‡ªå·±æˆä¸ºleaderã€‚
             client_->get(leaderNode, boost::bind(&LeaderSelector::handleGet, this, _1, _2, _3));
         }
         else 
         {
-            LOG_INFO << "I am already leader, just new node found - count=" << children.size();
+            LOG_INFO << "@LeaderSelector: I am already leader, just new node found - count=" << children.size();
         }
     }
     else if (code == kError)
@@ -90,9 +99,10 @@ void LeaderSelector::handleGet(ErrorCode code, const std::string& path, const st
 {
     if (code == kOk) 
     {
+		LOG_INFO << "@LeaderSelector: got node, path: " << path << ", value: " << value;
         if (!leader_ && value == name_) 
         { 
-            LOG_INFO << "I am leader - " << path << " " << value;
+            LOG_INFO << "@LeaderSelector: I am leader, path: " << path << ", value: " << value;
             leader_ = true;
             if (takeLeaderCb_)
             {
@@ -101,17 +111,28 @@ void LeaderSelector::handleGet(ErrorCode code, const std::string& path, const st
         }
         else if (!leader_)
         { 
-            LOG_INFO << "I am follower - " << path << " " << value;
+            LOG_INFO << "@LeaderSelector: I am follower, path: " << path << ", value: " << value;
         }
     }
     else if (code == kNotExist)
     {
-        /// leader½ÚµãÏÂÏßÁË£¬Ã»¹ØÏµ£¬GetChildrenÒ»¶¨»á´¥·¢watchÍ¨ÖªÎÒÃÇÕâ¸ö±ä»¯
+        /// leaderèŠ‚ç‚¹ä¸‹çº¿äº†ï¼Œæ²¡å…³ç³»ï¼ŒGetChildrenä¸€å®šä¼šè§¦å‘watché€šçŸ¥æˆ‘ä»¬è¿™ä¸ªå˜åŒ–
     }
     else 
     {
         client_->get(path, boost::bind(&LeaderSelector::handleGet, this, _1, _2, _3));
     }
+}
+
+void LeaderSelector::handleSessionTimeout()
+{
+	LOG_INFO << "@LeaderSelector: handle session timeout";
+	leader_ = false;
+	while (!client_->reconnect())
+	{
+		sleep(3);
+	}
+	client_->createEphemeralSequential(subNode_, name_, boost::bind(&LeaderSelector::handleCreate, this, _1, _2));
 }
 
 } // namespace zk
