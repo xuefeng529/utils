@@ -68,7 +68,6 @@ int handleDebug(CURL* curl, curl_infotype type, char* data, size_t size, void* c
 	{
 	case CURLINFO_TEXT:
 		fprintf(stderr, "== Info: %s", data);
-	default: /// in case a new one is introduced to shock us
 		return 0;
 
 	case CURLINFO_HEADER_OUT:
@@ -89,6 +88,9 @@ int handleDebug(CURL* curl, curl_infotype type, char* data, size_t size, void* c
 	case CURLINFO_SSL_DATA_IN:
 		text = "<= Recv SSL data";
 		break;
+
+	default: /// in case a new one is introduced to shock us
+		return 0;
 	}
 
 	dump(text, stderr, (unsigned char *)data, size);

@@ -86,7 +86,6 @@ int handleDebug(CURL* curl, curl_infotype type, char* data, size_t size, void* c
 	{
 	case CURLINFO_TEXT:
 		fprintf(stderr, "== Info: %s", data);
-	default: /// in case a new one is introduced to shock us
 		return 0;
 
 	case CURLINFO_HEADER_OUT:
@@ -107,6 +106,9 @@ int handleDebug(CURL* curl, curl_infotype type, char* data, size_t size, void* c
 	case CURLINFO_SSL_DATA_IN:
 		text = "<= Recv SSL data";
 		break;
+
+	default:
+		return 0;
 	}
 
 	dump(text, stderr, (unsigned char *)data, size);
@@ -143,7 +145,7 @@ HttpClient::HttpClient(bool keepalive)
     : curl_(NULL),
 	  curlHeaders_(NULL),
 	  enabledDebug_(false),
-	  enabledHttp2_(false),
+	  httpType_(kHttp),
       keepalive_(keepalive),	
 	  strerror_("unknown"),
       statusMessage_("unknown")
@@ -262,16 +264,26 @@ void HttpClient::resetConstOpt()
 		curl_easy_setopt(curl_, CURLOPT_DEBUGFUNCTION, handleDebug);
 	}
 
-	if (enabledHttp2_)
+	if (httpType_ == kHttp2)
 	{
 		curl_easy_setopt(curl_, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE);
 	}
 
 	if (!caFile_.empty())
 	{
+		/// 缺省情况就是PEM，所以无需设置，另外支持DER
+		//curl_easy_setopt(curl,CURLOPT_SSLCERTTYPE,"PEM");
 		/// 验证服务器证书有效性
 		curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1L);
 		curl_easy_setopt(curl_, CURLOPT_CAINFO, caFile_.c_str());
+	}
+	else
+	{
+		if (httpType_ == kHttps)
+		{
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 0L);
+			curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYHOST, 0L);
+		}
 	}
 
 	if (!certFile_.empty())

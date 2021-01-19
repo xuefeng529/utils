@@ -20,7 +20,8 @@ public:
     ~HttpClient();
 
 	void enableDebug() { enabledDebug_ = true; }
-	void enableHttp2() { enabledHttp2_ = true; }
+	void enableHttps() { httpType_ = kHttps; }
+	void enableHttp2() { httpType_ = kHttp2; }
 	void setCaFile(const std::string& caFile) { caFile_ = caFile; }
 	void setCertFile(const std::string& certFile, const std::string& keyFile, const std::string& password)
 	{
@@ -61,6 +62,8 @@ public:
 	const std::string& statusMessage() const { return statusMessage_; }
 
 private:
+	enum HttpType { kHttp, kHttps, kHttp2 };
+
 	static size_t handleResponseHeaders(void* buf, size_t size, size_t nmemb, void* ctx);
     static size_t handleResponse(void* buf, size_t size, size_t nmemb, void* ctx);
     
@@ -80,7 +83,7 @@ private:
 	struct curl_slist* curlHeaders_;
 
 	bool enabledDebug_;
-	bool enabledHttp2_;
+	HttpType httpType_;
 	
 	std::string caFile_;
 	std::string certFile_;

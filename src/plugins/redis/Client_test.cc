@@ -54,7 +54,7 @@ void save()
             snprintf(stockCode, sizeof(stockCode), "stock_%03d%08d", i, j);
             float value = 3.1415f;
             LOG_INFO << "value: " << value;
-            Entry entry = { userId, stockCode, value, static_cast<int8_t>(j) };
+            Entry entry = { userId, stockCode, value, static_cast<uint8_t>(j) };
             entries.push_back(entry);
         }
 

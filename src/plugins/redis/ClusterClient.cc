@@ -291,7 +291,7 @@ Status ClusterClient::incr(const std::string& key, int64_t incrby, int64_t* ret)
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "INCRBY %s %"PRId64, key.c_str(), incrby));
+		redisClusterCommand(ctx_, "INCRBY %s %" PRId64, key.c_str(), incrby));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -490,7 +490,7 @@ Status ClusterClient::hincr(const std::string& key, const std::string& field, in
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "HINCRBY %s %s %"PRId64, key.c_str(), field.c_str(), incrby));
+		redisClusterCommand(ctx_, "HINCRBY %s %s %" PRId64, key.c_str(), field.c_str(), incrby));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -787,7 +787,7 @@ Status ClusterClient::zadd(const std::string& key, const std::string& member, in
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "ZADD %s %"PRId64" %s", key.c_str(), score, member.c_str()));
+		redisClusterCommand(ctx_, "ZADD %s %" PRId64" %s", key.c_str(), score, member.c_str()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -836,7 +836,7 @@ Status ClusterClient::zrange(const std::string& key, int64_t start, int64_t stop
     assert(ctx_ != NULL);
     assert(ret != NULL);
 	redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "ZRANGE %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+		redisClusterCommand(ctx_, "ZRANGE %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -887,7 +887,7 @@ Status ClusterClient::zcard(const std::string& key, uint64_t* ret)
 Status ClusterClient::zremrangebyrank(const std::string& key, uint64_t start, uint64_t stop)
 {
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "ZREMRANGEBYRANK %s %"PRIu64" %"PRIu64, key.c_str(), start, stop));
+		redisClusterCommand(ctx_, "ZREMRANGEBYRANK %s %" PRIu64" %" PRIu64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -1035,7 +1035,7 @@ Status ClusterClient::qrange(const std::string& key, int64_t start, int64_t stop
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "LRANGE  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+		redisClusterCommand(ctx_, "LRANGE  %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -1062,7 +1062,7 @@ Status ClusterClient::qtrim(const std::string& key, int64_t start, int64_t stop)
 {
     assert(ctx_ != NULL); 
     redisReply* reply = static_cast<redisReply*>(
-		redisClusterCommand(ctx_, "LTRIM  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+		redisClusterCommand(ctx_, "LTRIM  %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {

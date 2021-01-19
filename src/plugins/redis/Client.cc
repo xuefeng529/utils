@@ -303,7 +303,7 @@ Status Client::incr(const std::string& key, int64_t incrby, int64_t* ret)
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "INCRBY %s %"PRId64, key.c_str(), incrby));
+        redisCommand(ctx_, "INCRBY %s %" PRId64, key.c_str(), incrby));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -502,7 +502,7 @@ Status Client::hincr(const std::string& key, const std::string& field, int64_t i
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "HINCRBY %s %s %"PRId64, key.c_str(), field.c_str(), incrby));
+        redisCommand(ctx_, "HINCRBY %s %s %" PRId64, key.c_str(), field.c_str(), incrby));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -799,7 +799,7 @@ Status Client::zadd(const std::string& key, const std::string& member, int64_t s
 {
     assert(ctx_ != NULL);
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "ZADD %s %"PRId64" %s", key.c_str(), score, member.c_str()));
+        redisCommand(ctx_, "ZADD %s %" PRId64" %s", key.c_str(), score, member.c_str()));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -848,7 +848,7 @@ Status Client::zrange(const std::string& key, int64_t start, int64_t stop, std::
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "ZRANGE %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+        ctx_, "ZRANGE %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -899,7 +899,7 @@ Status Client::zcard(const std::string& key, uint64_t* ret)
 Status Client::zremrangebyrank(const std::string& key, uint64_t start, uint64_t stop)
 {
     redisReply* reply = static_cast<redisReply*>(
-        redisCommand(ctx_, "ZREMRANGEBYRANK %s %"PRIu64" %"PRIu64, key.c_str(), start, stop));
+        redisCommand(ctx_, "ZREMRANGEBYRANK %s %" PRIu64" %" PRIu64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -1047,7 +1047,7 @@ Status Client::qrange(const std::string& key, int64_t start, int64_t stop, std::
     assert(ctx_ != NULL);
     assert(ret != NULL);
     redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "LRANGE  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+        ctx_, "LRANGE  %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
@@ -1074,7 +1074,7 @@ Status Client::qtrim(const std::string& key, int64_t start, int64_t stop)
 {
     assert(ctx_ != NULL); 
     redisReply* reply = static_cast<redisReply*>(redisCommand(
-        ctx_, "LTRIM  %s %"PRId64" %"PRId64, key.c_str(), start, stop));
+        ctx_, "LTRIM  %s %" PRId64" %" PRId64, key.c_str(), start, stop));
     Status status(ctx_, reply);
     if (!status.ok())
     {
