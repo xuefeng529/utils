@@ -147,8 +147,7 @@ HttpClient::HttpClient(bool keepalive)
 	  enabledDebug_(false),
 	  httpType_(kHttp),
       keepalive_(keepalive),	
-	  strerror_("unknown"),
-      statusMessage_("unknown")
+	  strerror_("unknown")
 {  
 }
 
@@ -253,6 +252,33 @@ bool HttpClient::del(const std::string& url,
 	resetCommonOpt(url, timeout, response, responseHeaders);
 	resetDelOpt();
 	return exec();
+}
+
+bool HttpClient::downloadFile(const std::string& url, const std::string& filename)
+{
+	if (curl_ == NULL)
+	{
+		curl_ = curl_easy_init();
+		if (curl_ == NULL)
+		{
+			strerror_ = "curl_easy_init failed";
+			return false;
+		}
+
+		resetConstOpt();
+	}
+
+	resetCommonOpt(url, 0, NULL, NULL);
+	FILE* stream = fopen(filename.c_str(), "wb");
+	if (stream == NULL)
+	{
+		return false;
+	}
+	
+	resetDownloadOpt(stream);
+	bool result = exec();
+	fclose(stream);
+	return result;
 }
 
 void HttpClient::resetConstOpt()
@@ -383,6 +409,12 @@ void HttpClient::resetDelOpt()
 {
 	assert(curl_ != NULL);
 	curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
+}
+
+void HttpClient::resetDownloadOpt(FILE* stream)
+{
+	assert(curl_ != NULL);
+	curl_easy_setopt(curl_, CURLOPT_WRITEDATA, stream);
 }
 
 bool HttpClient::exec()

@@ -56,10 +56,11 @@ public:
 			 int timeout,
 			 std::string* response,
 			 std::map<std::string, std::string>* responseHeaders = NULL);
+
+	bool downloadFile(const std::string& url, const std::string& filename);
    
 	const std::string& strerror() const { return strerror_; }
 	int statusCode() const { return statusCode_; }
-	const std::string& statusMessage() const { return statusMessage_; }
 
 private:
 	enum HttpType { kHttp, kHttps, kHttp2 };
@@ -77,6 +78,7 @@ private:
 	void resetPostOpt(const std::string& body);
 	void resetPutOpt(const std::string& body);
 	void resetDelOpt();
+	void resetDownloadOpt(FILE* stream);
 	bool exec();
 	
     CURL *curl_;
@@ -95,9 +97,7 @@ private:
     bool keepalive_;
 
 	std::string strerror_;
-
     int statusCode_;
-    std::string statusMessage_;
 };
 
 } // namespace curl
