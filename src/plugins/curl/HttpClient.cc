@@ -254,7 +254,7 @@ bool HttpClient::del(const std::string& url,
 	return exec();
 }
 
-bool HttpClient::downloadFile(const std::string& url, const std::string& filename)
+bool HttpClient::downloadFile(const std::string& url, const std::string& filename, int timeout)
 {
 	if (curl_ == NULL)
 	{
@@ -268,7 +268,7 @@ bool HttpClient::downloadFile(const std::string& url, const std::string& filenam
 		resetConstOpt();
 	}
 
-	resetCommonOpt(url, 0, NULL, NULL);
+	resetCommonOpt(url, timeout, NULL, NULL);
 	FILE* stream = fopen(filename.c_str(), "wb");
 	if (stream == NULL)
 	{

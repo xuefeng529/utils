@@ -57,7 +57,7 @@ public:
 			 std::string* response,
 			 std::map<std::string, std::string>* responseHeaders = NULL);
 
-	bool downloadFile(const std::string& url, const std::string& filename);
+	bool downloadFile(const std::string& url, const std::string& filename, int timeout = 0);
    
 	const std::string& strerror() const { return strerror_; }
 	int statusCode() const { return statusCode_; }
