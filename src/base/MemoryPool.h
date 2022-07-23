@@ -1,6 +1,9 @@
 #ifndef BASE_MEMORYPOOL_H
 #define BASE_MEMORYPOOL_H
 
+#include <boost/noncopyable.hpp>
+#include <iostream>
+
 #include <assert.h>
 #include <stddef.h>
 
@@ -69,11 +72,118 @@ namespace base
 //T* CachedObj<T>::theHead = NULL;
 
 /// 单线程内存池
+template<size_t N>
+class MemoryPool : boost::noncopyable
+{
+public:
+	struct Entry
+	{
+		Entry* next;		
+	};
+
+	explicit MemoryPool()
+		: chunkSize_(N > sizeof(Entry) ? N : sizeof(Entry)),
+		  freeList_(NULL)
+	{
+		expandFreeList();
+	}
+
+	~MemoryPool()
+	{
+		Entry* head = freeList_;
+		for (; head != NULL; head = freeList_)
+		{
+			freeList_ = freeList_->next;
+			/// 不调用Entry析构函数
+			operator delete(head);
+		}
+	}
+
+	void* malloc()
+	{
+		if (freeList_ == NULL)
+		{
+			expandFreeList();
+		}
+
+		void* head = freeList_;
+		freeList_ = freeList_->next;
+		return head;
+	}
+
+	void free(void* chunk)
+	{
+		if (chunk != NULL)
+		{
+			Entry* head = reinterpret_cast<Entry*>(chunk);
+			head->next = freeList_;
+			freeList_ = head;
+		}
+	}
+
+private:
+	void expandFreeList()
+	{
+		assert(freeList_ == NULL);
+		for (size_t i = 0; i < kExpansionSize; i++)
+		{
+			Entry* chunk = reinterpret_cast<Entry*>(new char[chunkSize_]);
+			chunk->next = freeList_;
+			freeList_ = chunk;
+		}
+	}
+
+	const size_t chunkSize_;
+	Entry* freeList_;
+
+	static const size_t kExpansionSize;
+};
+
+template<size_t N>
+const size_t MemoryPool<N>::kExpansionSize = 32;
+
+/// 多线程内存池
+template<class Lock, size_t N>
+class MTMemoryPool : MemoryPool<N>
+{
+public:
+	inline void* malloc()
+	{
+		lock.lock();
+		void* chunk = MemoryPool<N>::malloc();
+		lock.unlock();
+		return chunk;
+	}
+
+	inline void free(void* chunk)
+	{
+		lock.lock();
+		MemoryPool<N>::free(chunk);
+		lock.unlock();
+	}
+
+private:
+	Lock lock;
+};
+
+/// 单线程对象池
 template<class T>
 class ObjectPool
 {
 public:
 	static inline T* malloc()
+	{
+		if (theFreeList == NULL)
+		{
+			expandFreeList();
+		}
+
+		T* head = reinterpret_cast<T*>(theFreeList);
+		theFreeList = theFreeList->next_;
+		return head;
+	}
+
+	static inline T* malloc(size_t elements)
 	{
 		if (theFreeList == NULL)
 		{
@@ -99,9 +209,10 @@ public:
 	{
 		ObjectPool<T>* head = theFreeList;
 		for (; head != NULL; head = theFreeList)
-		{
-			delete[] head;
+		{			
 			theFreeList = theFreeList->next_;
+			/// 不调用ObjectPool<T>析构函数
+			operator delete(head);
 		}
 	}
 
@@ -109,12 +220,12 @@ private:
 	static void expandFreeList()
 	{
 		assert(theFreeList == NULL);
-		size_t size = sizeof(T) > sizeof(ObjectPool<T>*) ? sizeof(T) : sizeof(ObjectPool<T>*);
+		size_t size = sizeof(T) > sizeof(ObjectPool<T>) ? sizeof(T) : sizeof(ObjectPool<T>);
 		for (size_t i = 0; i < kExpansionSize; i++)
 		{
-			ObjectPool<T>* block = reinterpret_cast<ObjectPool<T>*>(new char[size]);
-			block->next_ = theFreeList;
-			theFreeList = block;
+			ObjectPool<T>* chunk = reinterpret_cast<ObjectPool<T>*>(new char[size]);
+			chunk->next_ = theFreeList;
+			theFreeList = chunk;
 		}
 	}
 
@@ -130,7 +241,7 @@ const size_t ObjectPool<T>::kExpansionSize = 32;
 template<class T>
 ObjectPool<T>* ObjectPool<T>::theFreeList = NULL;
 
-/// 多线程内存池
+/// 多线程对象池
 template<class Element, class Lock>
 class MTObjectPool : public ObjectPool<Element>
 {

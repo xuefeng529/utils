@@ -1,11 +1,35 @@
 #include "base/Buffer.h"
 
+#include <iostream>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
+
 #include <stdint.h>
 #include <stdio.h>
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
+
+class Uuid : public boost::uuids::uuid
+{
+public:
+	Uuid() : uuid(g_rgen()) {}
+	operator uuid() { return static_cast<uuid&>(*this); }
+	operator uuid() const { return static_cast<const uuid&>(*this); }
+
+	std::string get() const
+	{
+		return boost::uuids::to_string(*this);
+	}
+
+private:
+	static boost::uuids::random_generator g_rgen;
+};
+
+boost::uuids::random_generator Uuid::g_rgen;
 
 void test()
 {
@@ -23,8 +47,31 @@ void test()
 	printf("length of buf: %d\n", static_cast<int>(val.size()));
 }
 
+std::string genUuid()
+{
+	static boost::uuids::random_generator rgen;
+	boost::uuids::uuid uuid = rgen(); 
+	return boost::uuids::to_string(uuid);
+}
+
 int main(int argc, char* argv[])
 {
+	//boost::uuids::random_generator rgen;
+	time_t begin = time(NULL);
+	for (int i = 0; i < 3000000; i++)
+	{
+		//Uuid uuid;
+		//uuid.get();
+		//boost::uuids::uuid a_uuid = rgen(); 
+		//boost::lexical_cast<std::string>(a_uuid);
+		//std::string tmp_uuid = boost::uuids::to_string(a_uuid);
+		genUuid();
+		//std::cout << genUuid() << std::endl;
+	}
+	time_t end = time(NULL);
+	std::cout << "take time: " << end - begin << std::endl;
+	
+	return 0;
 	test();
 	/*base::Buffer buf;
 	buf.appendInt16(16);

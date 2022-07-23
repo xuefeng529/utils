@@ -694,6 +694,79 @@ Status Client::smembers(const std::string& key, std::vector<std::string>* ret)
     return status;
 }
 
+Status Client::sismember(const std::string& key, const std::string& member, bool* val)
+{
+	assert(ctx_ != NULL);
+	assert(!key.empty());
+	assert(!member.empty());
+	assert(val != NULL);
+	redisReply* reply = static_cast<redisReply*>(
+		redisCommand(ctx_, "SISMEMBER %s %s", key.c_str(), member.c_str()));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "SISMEMBER " << key << " " << member << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		if (reply->type == REDIS_REPLY_INTEGER)
+		{
+			*val = (reply->integer == 1 ? true : false);
+		}
+
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
+Status Client::srem(const std::string& key, const std::string& member)
+{
+	assert(ctx_ != NULL);
+	assert(!key.empty());
+	assert(!member.empty());
+	redisReply* reply = static_cast<redisReply*>(
+		redisCommand(ctx_, "SREM %s %s", key.c_str(), member.c_str()));
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << "SREM " << key << " " << member << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
+Status Client::srem(const std::string& key, const std::vector<std::string>& members)
+{
+	assert(ctx_ != NULL);
+	assert(!key.empty());
+	assert(!members.empty());
+	std::vector<std::string> cmd;
+	cmd.push_back("SREM");
+	cmd.push_back(key);
+	cmd.insert(cmd.end(), members.begin(), members.end());
+	std::string cmdStr;
+	redisReply* reply = wrapCommandArgv(cmd, &cmdStr);
+	Status status(ctx_, reply);
+	if (!status.ok())
+	{
+		LOG_ERROR << cmdStr << " [" << status.errstr() << "]";
+	}
+
+	if (reply != NULL)
+	{
+		freeReplyObject(reply);
+	}
+
+	return status;
+}
+
 Status Client::scard(const std::string& key, uint64_t* ret)
 {
 	assert(ctx_ != NULL);

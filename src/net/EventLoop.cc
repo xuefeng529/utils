@@ -112,7 +112,7 @@ EventLoop::EventLoop(const std::string& name)
 	: base_(event_base_new()),
       name_(name.empty() ? "unknown" : name),
 	  threadId_(base::CurrentThread::tid()),
-      pendingFunctors_(new PendingFunctorQueue()),
+      //pendingFunctors_(new PendingFunctorQueue()),
 	  timerQueue_(new TimerQueue(this))
 {
 	LOG_DEBUG << "EventLoop created " << this << " in thread " << threadId_;
@@ -236,16 +236,16 @@ void EventLoop::runInLoop(const Functor& cb)
 
 void EventLoop::queueInLoop(const Functor& cb)
 {
-    /*{
-        base::MutexLockGuard lock(mutex_);
-        pendingFunctors_.push_back(cb);
-        }*/
-	while (!pendingFunctors_->push(cb))
 	{
-        LOG_WARN << "pending functors queue is full in loop " << name_;
-        sleep(1);
-        //sched_yield();
+		base::MutexLockGuard lock(mutex_);
+		pendingFunctors_.push_back(cb);
 	}
+	//while (!pendingFunctors_->push(cb))
+	//{
+ //       LOG_WARN << "pending functors queue is full in loop " << name_;
+ //       sleep(1);
+ //       //sched_yield();
+	//}
 	
 	wakeup();
 }
@@ -293,34 +293,34 @@ void EventLoop::wakeup()
 
 void EventLoop::doPendingFunctors()
 {
-    /*std::vector<Functor> functors;
+	std::vector<Functor> functors;
 
-    {
-    base::MutexLockGuard lock(mutex_);
-    functors.swap(pendingFunctors_);
-    }
+	{
+		base::MutexLockGuard lock(mutex_);
+		functors.swap(pendingFunctors_);
+	}
 
-    for (size_t i = 0; i < functors.size(); ++i)
-    {
-    functors[i]();
-    }*/
-    do 
-    {
-        Functor functor;
-        if (!pendingFunctors_->pop(functor))
-        {
-            break;
-        }
+	for (size_t i = 0; i < functors.size(); ++i)
+	{
+		functors[i]();
+	}
+	/*do
+	{
+	Functor functor;
+	if (!pendingFunctors_->pop(functor))
+	{
+	break;
+	}
 
-        if (functor)
-        {
-            functor();
-        }
-        else
-        {
-            LOG_WARN << "pending functor null";
-        }      
-    } while (true);
+	if (functor)
+	{
+	functor();
+	}
+	else
+	{
+	LOG_WARN << "pending functor null";
+	}
+	} while (true);*/
 }
 
 } // namespace net

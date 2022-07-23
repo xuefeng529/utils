@@ -11,6 +11,10 @@
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
+#if __GNUC__ > 4
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 //-----------------------------------------------------------------------------
 // Platform-specific functions and macros
 

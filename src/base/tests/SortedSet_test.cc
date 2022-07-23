@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < count; ++i)
     {
         char key[128];
-        snprintf(key, sizeof(key), "key_%"PRIu64, i);
+        snprintf(key, sizeof(key), "key_%" PRIu64, i);
         allStr.push_back(key);
     }
     std::cout << "test insert string to std::set\n";
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
     for (size_t i = 0; i < count; ++i)
     {        
         char key[128];
-        snprintf(key, sizeof(key), "key_%"PRIu64, i);
+        snprintf(key, sizeof(key), "key_%" PRIu64, i);
         Entry entry = { key, 8.8f * i };
         allVec.push_back(entry);
         findVec.push_back(entry);

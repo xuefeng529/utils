@@ -73,7 +73,7 @@ void testGetChildren(ErrorCode errcode, const std::string& path, const std::vect
 {
     if (errcode == kOk) 
     {
-        printf("testGetChildren-[kOk] path=%s count=%"PRIu64"\n", path.c_str(), children.size());
+        printf("testGetChildren-[kOk] path=%s count=%" PRIu64"\n", path.c_str(), children.size());
         for (size_t i = 0; i < children.size(); i++)
         {
             printf("child: %s\n", children[i].c_str());

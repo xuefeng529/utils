@@ -6,10 +6,10 @@ add_executable(EventLoop_test EventLoop_test.cc)
 target_link_libraries(EventLoop_test net)
 
 add_executable(EchoServer_test EchoServer_test.cc)
-target_link_libraries(EchoServer_test net)
+target_link_libraries(EchoServer_test net crypto)
 
 add_executable(EchoClient_test EchoClient_test.cc)
-target_link_libraries(EchoClient_test net)
+target_link_libraries(EchoClient_test net crypto)
 
 add_executable(EventLoopThread_test EventLoopThread_test.cc)
 target_link_libraries(EventLoopThread_test net base)
@@ -18,10 +18,10 @@ add_executable(TimerQueue_test TimerQueue_test.cc)
 target_link_libraries(TimerQueue_test net)
 
 add_executable(CodecServer_test CodecServer_test.cc)
-target_link_libraries(CodecServer_test net)
+target_link_libraries(CodecServer_test net crypto)
 
 add_executable(CodecClient_test CodecClient_test.cc)
-target_link_libraries(CodecClient_test net)
+target_link_libraries(CodecClient_test net crypto)
 
 #add_executable(TcpClient_test TcpClient_test.cc)
 #target_link_libraries(TcpClient_test net base)
@@ -33,10 +33,10 @@ target_link_libraries(CodecClient_test net)
 #target_link_libraries(ssl_client ssl)
 
 add_executable(SslEchoServer_test SslEchoServer_test.cc)
-target_link_libraries(SslEchoServer_test net base)
+target_link_libraries(SslEchoServer_test net base crypto)
 
 add_executable(SslEchoClient_test SslEchoClient_test.cc)
-target_link_libraries(SslEchoClient_test net base)
+target_link_libraries(SslEchoClient_test net base crypto)
 
 add_executable(ApnsClient_test ApnsClient_test.cc)
-target_link_libraries(ApnsClient_test net base)
+target_link_libraries(ApnsClient_test net base crypto)

@@ -77,10 +77,10 @@ private:
 	struct event_base* base_;
     const std::string name_;
 	const pid_t threadId_;
-	//base::MutexLock mutex_;
-	//std::vector<Functor> pendingFunctors_;
-    typedef base::lockfree::ArrayLockFreeQueue<Functor, kEventLoopQueueSize> PendingFunctorQueue;
-    boost::scoped_ptr<PendingFunctorQueue> pendingFunctors_;
+	base::MutexLock mutex_;
+	std::vector<Functor> pendingFunctors_;
+    //typedef base::lockfree::ArrayLockFreeQueue<Functor, kEventLoopQueueSize> PendingFunctorQueue;
+    //boost::scoped_ptr<PendingFunctorQueue> pendingFunctors_;
 	boost::scoped_ptr<TimerQueue> timerQueue_;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,27)

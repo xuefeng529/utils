@@ -83,6 +83,9 @@ public:
     Status sadd(const std::string& key, const std::string& member);
     Status sadd(const std::string& key, const std::vector<std::string>& members);
     Status smembers(const std::string& key, std::vector<std::string>* ret);
+	Status sismember(const std::string& key, const std::string& member, bool* val);
+	Status srem(const std::string& key, const std::string& member);
+	Status srem(const std::string& key, const std::vector<std::string>& members);
 	Status scard(const std::string& key, uint64_t* ret);
 	Status spop(const std::string& key, std::string* ret = NULL);
     /// @cursor 0开始一轮新的迭代

@@ -87,7 +87,6 @@ class Buffer
 
   void retrieve(size_t len)
   {
-    assert(len <= readableBytes());
     if (len < readableBytes())
     {
       readerIndex_ += len;
@@ -96,6 +95,12 @@ class Buffer
     {
       retrieveAll();
     }
+  }
+
+  void unretrieve(size_t len)
+  {
+	  assert(len <= readerIndex_);
+	  readerIndex_ -= len;
   }
 
   void retrieveUntil(const char* end)
@@ -138,10 +143,38 @@ class Buffer
 
   std::string retrieveAsString(size_t len)
   {
-    assert(len <= readableBytes());
+	if (len > readableBytes())
+	{
+		return std::string();
+	}
+
     std::string result(peek(), len);
     retrieve(len);
     return result;
+  }
+
+  bool retrieveAsString(size_t len, std::string* str)
+  {
+	  if (len > readableBytes())
+	  {
+		  return false;
+	  }
+
+	  str->assign(peek(), len);
+	  retrieve(len);
+	  return true;
+  }
+
+  bool retrieveAsBytes(char* buf, size_t len)
+  {
+	  if (len > readableBytes())
+	  {
+		  return false;
+	  }
+
+	  std::copy(peek(), peek() + len, buf);
+	  retrieve(len);
+	  return true;
   }
 
   void append(const char* str)
@@ -154,7 +187,7 @@ class Buffer
 
   void append(const std::string& str)
   {
-	  append(str.c_str());
+	  append(str.data(), str.size());
   }
 
   void append(const char* data, size_t len)
@@ -244,6 +277,13 @@ class Buffer
     return result;
   }
 
+  void peekAsBytes(char* buf, size_t len) const
+  {
+	  assert(buf != NULL);
+	  assert(readableBytes() >= len);
+	  ::memcpy(buf, peek(), len);
+  }
+
   int64_t peekInt64() const
   {
     assert(readableBytes() >= sizeof(int64_t));
@@ -306,6 +346,61 @@ class Buffer
   size_t internalCapacity() const
   {
     return buffer_.capacity();
+  }
+
+  /// Peek from OriginalEndian
+  int64_t peekInt64WithOriginalEndian() const
+  {
+	  int64_t be64 = -1;
+	  if (readableBytes() >= sizeof(int64_t))
+	  {
+		  ::memcpy(&be64, peek(), sizeof(be64));
+	  }
+
+	  return be64;
+  }
+
+  int32_t peekInt32WithOriginalEndian() const
+  {
+	  int32_t be32 = -1;
+	  if (readableBytes() >= sizeof(int32_t))
+	  {
+		  ::memcpy(&be32, peek(), sizeof(be32));
+	  }
+
+	  return be32;
+  }
+
+  int16_t peekInt16WithOriginalEndian() const
+  {
+	  int16_t be16 = -1;
+	  if (readableBytes() >= sizeof(int16_t))
+	  {
+		  ::memcpy(&be16, peek(), sizeof(be16));
+	  }
+
+	  return be16;
+  }
+
+  int64_t readInt64WithOriginalEndian()
+  {
+	  int64_t result = peekInt64WithOriginalEndian();
+	  retrieveInt64();
+	  return result;
+  }
+
+  int32_t readInt32WithOriginalEndian()
+  {
+	  int32_t result = peekInt32WithOriginalEndian();
+	  retrieveInt32();
+	  return result;
+  }
+
+  int16_t readInt16WithOriginalEndian()
+  {
+	  int16_t result = peekInt16WithOriginalEndian();
+	  retrieveInt16();
+	  return result;
   }
 
 private:

@@ -62,7 +62,7 @@ void test1()
 		return;
 	}
 
-	timeout->cancell();
+	timeout->cancel();
 
 	if (!timer.addTimeout(boost::bind(onTimer, 60, 60), 60000))
 	{

@@ -75,7 +75,8 @@ private:
 			Package pack;
 			pack.cmd = 10;
 			pack.flag = 1;
-			strncpy(pack.name, "name", strlen("name"));
+			std::string s("name");
+			strncpy(pack.name, s.c_str(), s.size());
 			pack.value = 123;
 			codec_.send(conn, reinterpret_cast<char*>(&pack), sizeof(pack));
 			++current;

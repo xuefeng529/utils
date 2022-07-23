@@ -31,6 +31,10 @@
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
+#if __GNUC_PREREQ(4,6)
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 #ifndef ULLONG_MAX
 # define ULLONG_MAX ((uint64_t) -1) /* 2^64-1 */
 #endif
