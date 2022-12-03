@@ -35,8 +35,8 @@ HttpServer::HttpServer(EventLoop* loop,
 
 void HttpServer::start()
 {
-	LOG_WARN << "HttpServer[" << server_.name()
-		<< "] starts listenning on " << server_.ipPort();
+	LOG_INFO << "HttpServer[" << server_.name()
+		<< "] starts listening on " << server_.ipPort();
 	server_.setThreadInitCallback(threadInitCallback_);
 	server_.start();
 }
@@ -69,8 +69,46 @@ void HttpServer::handleRequest(const TcpConnectionPtr& conn, const HttpRequest& 
 		requestCallback_(request, &response);
 		BufferPtr buffer(new Buffer());
 		response.appendToBuffer(buffer.get());
+		HttpResponse::ChunkedCallback chunkedCb = response.getChunkedCallback();
+		if (chunkedCb)
+		{
+			conn->setWriteCompleteCallback(boost::bind(&HttpServer::handleWriteComplete,
+				this, response.closeConnection(), chunkedCb, _1));
+			conn->send(buffer);
+		}
+		else
+		{
+			conn->send(buffer);
+			if (response.closeConnection())
+			{
+				conn->close();
+			}
+		}
+	}
+}
+
+void HttpServer::handleWriteComplete(bool close,
+									 const HttpResponse::ChunkedCallback& chunkedCb,									 
+									 const TcpConnectionPtr& conn)
+{
+	assert(chunkedCb);
+	bool endChunked = false;
+	BufferPtr buffer(new Buffer());
+	if (!chunkedCb(buffer.get(), &endChunked))
+	{
+		conn->close();
+		return;
+	}
+	
+	if (buffer->length() > 0)
+	{
 		conn->send(buffer);
-		if (response.closeConnection())
+	}
+
+	if (endChunked)
+	{
+		conn->setWriteCompleteCallback(NULL);
+		if (close)
 		{
 			conn->close();
 		}

@@ -1,5 +1,8 @@
 add_executable(HttpServer_test HttpServer_test.cc)
-target_link_libraries(HttpServer_test http)
+target_link_libraries(HttpServer_test http crypto)
 
 add_executable(http_parser_test http_parser_test.cc)
-target_link_libraries(http_parser_test http)
+target_link_libraries(http_parser_test http crypto)
+
+add_executable(HttpFileServer_test HttpFileServer_test.cc)
+target_link_libraries(HttpFileServer_test http crypto)

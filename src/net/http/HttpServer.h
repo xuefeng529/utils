@@ -2,12 +2,12 @@
 #define NET_HTTP_HTTPSERVER_H
 
 #include "net/TcpServer.h"
+#include "net/http/HttpResponse.h"
 
 namespace net
 {
 
 class HttpRequest;
-class HttpResponse;
 
 class HttpServer : boost::noncopyable
 {
@@ -39,6 +39,9 @@ private:
 	void handleConnection(const TcpConnectionPtr& conn);
 	void handleMessage(const TcpConnectionPtr& conn, Buffer* buffer);
 	void handleRequest(const TcpConnectionPtr& conn, const HttpRequest& request);
+	void handleWriteComplete(bool close,
+							 const HttpResponse::ChunkedCallback& chunkedCb,							 
+							 const TcpConnectionPtr& conn);
 
     TcpServer server_;
 	RequestCallback requestCallback_;

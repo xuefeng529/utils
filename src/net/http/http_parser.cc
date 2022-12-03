@@ -31,7 +31,7 @@
 
 #pragma GCC diagnostic ignored "-Wold-style-cast"
 
-#if __GNUC_PREREQ(4,6)
+#if __GNUC__ > 4
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
 

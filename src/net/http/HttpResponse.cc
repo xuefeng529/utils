@@ -1,5 +1,6 @@
 #include "net/http/HttpResponse.h"
 #include "net/Buffer.h"
+#include "base/Logging.h"
 
 #include <stdio.h>
 
@@ -47,6 +48,7 @@ bool HttpResponse::appendToBuffer(Buffer* output) const
 {
 	if (statusCode_ == kUnknown || statusMessage_.empty())
 	{
+		LOG_ERROR << "status or reason is empty";
 		return false;
 	}
 
@@ -68,8 +70,13 @@ bool HttpResponse::appendToBuffer(Buffer* output) const
 
 	if (!body_.empty())
 	{
-		snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n", body_.size());
-		output->append(buf);
+		std::map<std::string, std::string>::const_iterator it = headers_.find("Content-Length");
+		if (it == headers_.end())
+		{
+			snprintf(buf, sizeof(buf), "Content-Length: %zd\r\n", body_.size());
+			output->append(buf);
+		}
+		
 		output->append("\r\n");
 		output->append(body_);
 	}
