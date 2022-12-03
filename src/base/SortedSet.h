@@ -7,7 +7,7 @@
 namespace base
 {
 
-template<class T, class Hash, class Compare = std::less<T>, class Equal = std::equal_to<T> >
+template<class T, class Hash = boost::hash<T>, class Compare = std::less<T>, class Equal = std::equal_to<T> >
 class SortedSet
 {
 public:
@@ -67,7 +67,7 @@ public:
 
     size_t size() const
     {
-        assert(sortedSet_.size() && existed_.size());
+        assert(sortedSet_.size() == existed_.size());
         return sortedSet_.size();
     }
 
@@ -77,30 +77,40 @@ public:
         return it != existed_.end() ? it->second : sortedSet_.end();
     }
 
-    bool insert(const T& val)
+	std::pair<iterator, bool> insert(const T& val)
     {
-        std::pair<iterator, bool> ret = sortedSet_.insert(val);
-        if (ret.second)
-        {
-            existed_[val] = ret.first;
-        }
+		iterator it = find(val);
+		if (it != end())
+		{
+			return std::make_pair(it, false);
+		}
 
+        std::pair<iterator, bool> ret = sortedSet_.insert(val);
+		assert(ret.second);
+		existed_[val] = ret.first;
         assert(sortedSet_.size() == existed_.size());
-        return ret.second;
+		return ret;
     }
 
-    void erase(iterator position)
+	iterator erase(iterator position)
     {
         existed_.erase(*position);
-        sortedSet_.erase(position);
+		iterator it = sortedSet_.erase(position);
         assert(sortedSet_.size() == existed_.size());
+		return it;
     }
 
     size_t erase(const T& val)
     {
-        size_t n = sortedSet_.erase(val);
-        size_t n1 = existed_.erase(val);
-        assert(n == n1);
+		iterator it = find(val);
+		if (it == end())
+		{
+			return 0;
+		}
+
+		size_t n = existed_.erase(*it);
+        sortedSet_.erase(it);
+		assert(sortedSet_.size() == existed_.size());
         return n;
     }
 
@@ -108,7 +118,7 @@ public:
     {
         sortedSet_.swap(x.sortedSet_);
         existed_.swap(x.existed_);
-        assert(x.sortedSet_.size() == x.existed_.size());
+        assert(sortedSet_.size() == existed_.size());
     }
 
     void clear()

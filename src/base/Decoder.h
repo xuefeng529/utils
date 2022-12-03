@@ -81,7 +81,11 @@ public:
 		return true;
 	}
 
+#if __cplusplus >= 201103L
 	template<typename HeaderType = uint32_t>
+#else
+	template<typename HeaderType>
+#endif
 	bool retrieveAsString(std::string* ret)
 	{
 		assert(ret != NULL);

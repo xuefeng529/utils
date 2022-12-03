@@ -96,7 +96,8 @@ int main(int argc, char* argv[])
     begin = time(NULL);
     for (size_t i = 0; i < allVec.size(); i++)
     {
-        assert(entrySet.insert(allVec[i]));
+		std::pair<base::SortedSet<Entry, Entry>::iterator, bool> res = entrySet.insert(allVec[i]);
+        assert(res.second);
     }
     end = time(NULL);
     std::cout << "diff time: " << end - begin << "(secs)" << std::endl;
@@ -104,7 +105,8 @@ int main(int argc, char* argv[])
     std::cout << "test reinsert\n";
     for (size_t i = 0; i < remainVec.size(); i++)
     {
-        assert(!entrySet.insert(remainVec[i]));
+		std::pair<base::SortedSet<Entry, Entry>::iterator, bool> res = entrySet.insert(remainVec[i]);
+        assert(!res.second);
     }
 
     std::cout << "test traversing\n";
