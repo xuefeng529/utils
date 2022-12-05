@@ -61,7 +61,6 @@ public:
 
     bool empty() const
     {
-        assert(sortedSet_.empty() && existed_.empty());
         return sortedSet_.empty();
     }
 
